@@ -5,7 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://john-lester-armillo.vercel.app'),
+  metadataBase: new URL('https://john-armillo.vercel.app/'),
   
   title: "John Lester Armillo | AI Automation Specialist",
   description:

@@ -32,8 +32,11 @@ export default function CTA() {
                 Hire Me
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
               </a>
+              
               <a
-                href="#resume"
+                href="/resume/John_Lester_Armillo_AI_Automation_Specialist_Resume.pdf"
+                target="_blank"
+  rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-950/40 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-zinc-500 hover:bg-zinc-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
               >
                 <Download className="h-4 w-4" aria-hidden="true" />

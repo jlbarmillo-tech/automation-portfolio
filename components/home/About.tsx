@@ -54,11 +54,12 @@ export default function About() {
 
             <div className="mt-10 flex flex-wrap gap-4">
               <a
-                href="#resume"
-                className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
-              >
-                Download Resume
-              </a>
+  href="/resume/John_Lester_Armillo_AI_Automation_Specialist_Resume.pdf"
+  target="_blank"
+  rel="noopener noreferrer"
+>
+  Download Resume
+</a>
               <a
                 href="contact"
                 className="inline-flex items-center justify-center rounded-full border border-zinc-700 bg-zinc-900 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-emerald-500/60 hover:text-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
