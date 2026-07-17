@@ -1,0 +1,503 @@
+{
+  "name": "AI Client Onboarding System",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a client classification specialist \nfor a digital agency.\n\nRead the client submission below and classify \nthem into exactly one of these three categories:\n\nSTARTUP\n- Company size 1-10 people\n- Budget under $2000/month\n- Early stage, scrappy, moving fast\n- Needs affordable solutions\n\nSME\n- Company size 11-200 people\n- Budget $2000-$10000/month\n- Established business, growing\n- Needs reliable, scalable solutions\n\nENTERPRISE\n- Company size 200+ people\n- Budget $10000+/month\n- Large organization\n- Needs custom, high-touch solutions\n\nClient Submission:\nFull Name: {{ $json['Full Name'] }}\nCompany: {{ $json['Company Name'] }}\nCompany Size: {{ $json['Company Size'] }}\nIndustry: {{ $json['Industry'] }}\nMonthly Budget: {{ $json['Monthly Budget'] }}\nMessage: {{ $json['What do you need help with?'] }}\nUrgency: {{ $json['How urgent is this for you?'] }}\n\nRules:\n- Return ONLY valid JSON, no markdown, no explanation\n- Use budget and company size as primary signals\n\nReturn this exact format:\n{\n  \"client_type\": \"STARTUP\",\n  \"confidence\": \"HIGH\",\n  \"reason\": \"One sentence explaining the classification\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "41d6ac91-7ce6-4bbd-9b2c-6a1ef3fdf0b0",
+      "name": "AI Client Classifier"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "77d38082-b531-4776-a83a-290949542975",
+      "name": "Gemini Classifier",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EuQ1xejBtv4aV0i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get original form data\nconst form = $('New Submission Received').first().json;\n\n// Clean Gemini output\nlet text = $json.output;\ntext = text.replace(/```json/g, '');\ntext = text.replace(/```/g, '');\ntext = text.trim();\n\nconst classification = JSON.parse(text);\n\nreturn [{\n  json: {\n    // Original form fields\n    full_name: form['Full Name'],\n    email: form['Email Address'],\n    company: form['Company Name'],\n    company_size: form['Company Size'],\n    industry: form['Industry'],\n    budget: form['Monthly Budget'],\n    message: form['What do you need help with?'],\n    urgency: form['How urgent is this for you?'],\n\n    // AI Classification result\n    client_type: classification.client_type || 'SME',\n    confidence: classification.confidence || 'MEDIUM',\n    classification_reason: classification.reason || 'Unable to classify'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        0
+      ],
+      "id": "16c9c70d-336a-45be-a244-26170992a7dc",
+      "name": "Parse Client Type"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1u3LIjjBvDS2gvXnzjOz9Dh-fwoPIshVjBcOTDOjY048",
+          "mode": "list",
+          "cachedResultName": "Client Onboarding System",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u3LIjjBvDS2gvXnzjOz9Dh-fwoPIshVjBcOTDOjY048/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2056751921,
+          "mode": "list",
+          "cachedResultName": "New Submissions1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1u3LIjjBvDS2gvXnzjOz9Dh-fwoPIshVjBcOTDOjY048/edit#gid=2056751921"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b8c46daf-1b05-48b9-8079-1a7e63e67e74",
+      "name": "New Submission Received",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "kKXISem1OlEpSSRx",
+          "name": "Google Sheets Trigger account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a senior client success manager \nat a digital agency.\n\nWrite a warm, personalized welcome email \nfor a new client inquiry.\n\nThe client has been classified as: \n{{ $json.client_type }}\n\nUse these guidelines based on client type:\n\nSTARTUP:\n- Tone: Energetic, peer-to-peer, casual\n- Focus: Speed, affordability, quick wins\n- Mention: We love working with startups\n- CTA: Book a free 30-min strategy call\n\nSME:\n- Tone: Professional but friendly\n- Focus: Reliability, scalability, ROI\n- Mention: We help growing businesses scale\n- CTA: Schedule a discovery call this week\n\nENTERPRISE:\n- Tone: Formal, consultative, high-touch\n- Focus: Custom solutions, dedicated support\n- Mention: Our enterprise team is ready\n- CTA: Request a custom proposal\n\nClient Details:\nName: {{ $json.full_name }}\nCompany: {{ $json.company }}\nIndustry: {{ $json.industry }}\nBudget: {{ $json.budget }}\nTheir Message: {{ $json.message }}\n\nRules:\n- Address them by first name only\n- Keep it under 200 words\n- Sound human, not robotic\n- Return ONLY valid JSON, no markdown\n\nReturn this exact format:\n{\n  \"subject\": \"email subject line here\",\n  \"body\": \"full email body here\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        656,
+        0
+      ],
+      "id": "8cf5bfd0-1060-42fb-80f8-d24528955206",
+      "name": "AI Email Generator"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        576,
+        208
+      ],
+      "id": "2bff0e46-4c97-44b0-9070-8c15cf2cee48",
+      "name": "Gemini Email Writer",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EuQ1xejBtv4aV0i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales operations specialist.\n\nRead the client's message and urgency level \nand decide the best next action.\n\nClient Name: {{ $('Parse Client Type').item.json.full_name }}\nUrgency: {{ $('Parse Client Type').item.json.urgency }}\nMessage: {{ $('Parse Client Type').item.json.message }}\n\nDecision Rules:\n- If urgency is \"This week\" or \"Within 1 month\" \n  → next_action: SCHEDULE_CALL\n- If urgency is \"Within 3 months\" or \"Just exploring\" \n  → next_action: ADD_TO_NEWSLETTER\n- If message contains urgent language \n  (overwhelmed, losing, urgent, ASAP, immediately) \n  → override to SCHEDULE_CALL regardless of urgency field\n\nRules:\n- Return ONLY valid JSON, no markdown\n\nReturn this exact format:\n{\n  \"next_action\": \"SCHEDULE_CALL\",\n  \"urgency_level\": \"HIGH\",\n  \"reason\": \"One sentence explaining the decision\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        928,
+        0
+      ],
+      "id": "b7d5699f-e63a-4574-933a-4021e7710b9c",
+      "name": "AI Next Action Decider"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        208
+      ],
+      "id": "b6459b48-9314-4dd4-b98a-5fe491e37321",
+      "name": "Gemini Action Decider",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EuQ1xejBtv4aV0i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get all previous data\nconst client = $('Parse Client Type').first().json;\n\n// Get email content from AI Email Generator\nlet emailText = $('AI Email Generator').first().json.output;\nemailText = emailText.replace(/```json/g, '');\nemailText = emailText.replace(/```/g, '');\nemailText = emailText.trim();\nconst emailContent = JSON.parse(emailText);\n\n// Clean next action decision\nlet actionText = $json.output;\nactionText = actionText.replace(/```json/g, '');\nactionText = actionText.replace(/```/g, '');\nactionText = actionText.trim();\nconst action = JSON.parse(actionText);\n\nreturn [{\n  json: {\n    // Client profile\n    full_name: client.full_name,\n    email: client.email,\n    company: client.company,\n    industry: client.industry,\n    budget: client.budget,\n    message: client.message,\n    urgency: client.urgency,\n\n    // AI Decision 1 — Classification\n    client_type: client.client_type,\n    confidence: client.confidence,\n    classification_reason: client.classification_reason,\n\n    // AI Decision 2 — Email content\n    email_subject: emailContent.subject || 'Welcome to the agency',\n    email_body: emailContent.body || 'Thank you for reaching out.',\n\n    // AI Decision 3 — Next action\n    next_action: action.next_action || 'ADD_TO_NEWSLETTER',\n    urgency_level: action.urgency_level || 'MEDIUM',\n    action_reason: action.reason || 'Standard follow-up'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "1211f45b-5ee3-414a-986c-73d457c11a8c",
+      "name": "Parse Final Decision"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.next_action }}",
+                    "rightValue": "SCHEDULE_CALL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "43557155-a274-4018-8cb7-1725c32f4875"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "b5e6634f-954d-40ca-b9d3-0d8128fc4433",
+                    "leftValue": "={{ $json.next_action }}",
+                    "rightValue": "ADD_TO_NEWSLETTER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1488,
+        0
+      ],
+      "id": "33e29c84-0f3b-424f-96a4-1722ab83b3da",
+      "name": "Route by Next Action"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=🔥 HOT LEAD — CALL NEEDED ASAP\n\n👤 {{ $json.full_name }} from {{ $json.company }}\n📧 {{ $json.email }}\n💼 Client Type: {{ $json.client_type }}\n💰 Budget: {{ $json.budget }}\n⚡ Urgency: {{ $json.urgency_level }}\n\nTheir Message:\n{{ $json.message }}\n\n🤖 AI Reason: {{ $json.action_reason }}\n\nACTION REQUIRED: Schedule a discovery call \nwithin 24 hours.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1696,
+        -160
+      ],
+      "id": "ec1ecd80-e706-4dab-816b-140e366e69cd",
+      "name": "Notify Sales — Urgent Call Needed",
+      "webhookId": "18539f64-ea51-4d5d-ad9c-10917ec0eaa4",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=📋 New Lead — Added to Newsletter  👤 {{ $json.full_name }} from {{ $json.company }} 📧 {{ $json.email }} 💼 Client Type: {{ $json.client_type }} 💰 Budget: {{ $json.budget }}  🤖 AI Reason: {{ $json.action_reason }}  ACTION: Added to nurture newsletter sequence. Follow up in 3 months.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1696,
+        176
+      ],
+      "id": "8e3c6c8a-d305-4bdb-89d1-0b25412ef55f",
+      "name": "Notify Sales — Added to Newsletter",
+      "webhookId": "76eae680-c6f5-4b87-8630-26dbdc5bccf6",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.email_subject }}",
+        "message": "={{ $json.email_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        16
+      ],
+      "id": "83187764-63af-414f-afc6-16e42a36a5f8",
+      "name": "Send Welcome Email",
+      "webhookId": "fb19ed1e-681e-4392-a548-242f49c1c57c",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ns8gpvCuxD8Y5g8v",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC8MDAATW",
+          "mode": "list",
+          "cachedResultName": "sales-team"
+        },
+        "text": "=✅ New Client Onboarded  \n👤 {{ $('Route by Next Action').item.json.full_name }}\n🏢 {{ $('Route by Next Action').item.json.company }}| {{ $('Route by Next Action').item.json.industry }}\n📧 {{ $('Route by Next Action').item.json.email }}\n💰 Budget: {{ $('Route by Next Action').item.json.budget }}\n🤖 AI DECISIONS MADE: \n1️⃣ Client Type:  {{ $('Route by Next Action').item.json.client_type }}\n({{ $('Route by Next Action').item.json.confidence }} confidence)    \nReason: {{ $('Route by Next Action').item.json.classification_reason }}\n2️⃣ Welcome Email: Sent ✓    \nSubject:  {{ $('Route by Next Action').item.json.email_subject }}\n3️⃣ Next Action: {{ $('Route by Next Action').item.json.next_action }}\nUrgency:  {{ $('Route by Next Action').item.json.urgency_level }}\nReason: {{ $('Route by Next Action').item.json.action_reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1904,
+        16
+      ],
+      "id": "97618107-90cb-4252-9033-35e43d3dd795",
+      "name": "Log to Sales Pipeline",
+      "webhookId": "53f822a6-f5eb-491d-83a8-8aaa00089960",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gemini Classifier": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Client Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Client Classifier": {
+      "main": [
+        [
+          {
+            "node": "Parse Client Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New Submission Received": {
+      "main": [
+        [
+          {
+            "node": "AI Client Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Client Type": {
+      "main": [
+        [
+          {
+            "node": "AI Email Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Email Writer": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Email Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Generator": {
+      "main": [
+        [
+          {
+            "node": "AI Next Action Decider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Action Decider": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Next Action Decider",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Next Action Decider": {
+      "main": [
+        [
+          {
+            "node": "Parse Final Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Final Decision": {
+      "main": [
+        [
+          {
+            "node": "Route by Next Action",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Next Action": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Notify Sales — Urgent Call Needed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Sales — Added to Newsletter",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Log to Sales Pipeline",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b7480895-0a9a-4c7d-9218-ad0cd493bf65",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9267919bb8599414fd3ff1bc25326c9ac4e634d5b70f128d74410ac675f34c58"
+  },
+  "nodeGroups": [],
+  "id": "YPcg3wSCTzlFAHYp",
+  "tags": []
+}

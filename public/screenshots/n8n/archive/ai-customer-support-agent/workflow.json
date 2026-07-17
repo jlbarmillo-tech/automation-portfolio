@@ -1,0 +1,560 @@
+{
+  "name": "AI Customer Support Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "labelIds": [
+            "INBOX"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "228784e8-690f-432d-9e8d-61e9b1464340",
+      "name": "New Support Email",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "360a59e6-e312-422a-8aa7-0d6ed2354beb",
+              "name": "customer_name",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "361fc6b9-3e4a-4ed1-8c4f-08c025cfdaf1",
+              "name": "email",
+              "value": "={{ $json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "c0f0ce2e-9432-486e-9f65-fee3d381bcd2",
+              "name": "subject",
+              "value": "={{ $json.Subject }}",
+              "type": "string"
+            },
+            {
+              "id": "8d6c1531-4593-4c30-b718-2a908b2c40ff",
+              "name": "message",
+              "value": "={{ $json.snippet }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f05b935d-85a9-4748-8965-6fd0f1f9e747",
+      "name": "Prepare Support Ticket"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"Account Access\",\n  \"priority\": \"High\",\n  \"sentiment\": \"Negative\",\n  \"department\": \"Technical Support\",\n  \"summary\": \"Customer cannot log into the account despite resetting the password.\",\n  \"recommended_action\": \"Escalate to Technical Support\",\n  \"draft_reply\": \"Thank you for contacting us. We understand that you are unable to access your account. Our technical support team is reviewing your issue and will assist you as soon as possible.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        208
+      ],
+      "id": "9f6c676c-fd16-4416-9ea5-e77b1e56c206",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        208
+      ],
+      "id": "69d89105-73be-47a9-a538-c396b788d0ec",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "x67f9aAPFf2WHX5e",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "You are an experienced Customer Support Team Lead.\n\nAnalyze the customer's support request.\n\nDetermine:\n\n1. Support Category\n2. Priority\n3. Customer Sentiment\n4. Responsible Department\n5. Short Summary\n6. Recommended Action\n7. Draft Reply\n\nClassification Rules\n\nSupport Category:\n- Billing\n- Technical Issue\n- Account Access\n- Bug Report\n- Feature Request\n- Refund\n- General Inquiry\n\nPriority:\n- High\n- Medium\n- Low\n\nSentiment:\n- Positive\n- Neutral\n- Negative\n\nDepartment:\n- Billing\n- Technical Support\n- Customer Service\n- Engineering\n- Product Team\n\nRespond ONLY using the required JSON format.\n\n\nCustomer Name:\n{{ $json.customer_name }}\n\nCustomer Email:\n{{ $json.email }}\n\nSubject:\n{{ $json.subject }}\n\nSupport Message:\n{{ $json.message }}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "bc71ab1a-b1ec-4ebd-9130-162a04eb6822",
+      "name": "AI Support Analysis"
+    },
+    {
+      "parameters": {
+        "authentication": "airtableOAuth2Api",
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "app6zV8fzs4oncdqJ",
+          "mode": "list",
+          "cachedResultName": "AI Customer Support",
+          "cachedResultUrl": "https://airtable.com/app6zV8fzs4oncdqJ"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbluGGLMUsFiwSxYA",
+          "mode": "list",
+          "cachedResultName": "Support Tickets",
+          "cachedResultUrl": "https://airtable.com/app6zV8fzs4oncdqJ/tbluGGLMUsFiwSxYA"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Customer name": "={{ $('Prepare Support Ticket').item.json.customer_name }}",
+            "Email": "={{ $('Prepare Support Ticket').item.json.email }}",
+            "Subject": "={{ $('Prepare Support Ticket').item.json.subject }}",
+            "Category": "={{ $json.output.category }}",
+            "Priority": "={{ $json.output.priority }}",
+            "Sentiment": "={{ $json.output.sentiment }}",
+            "Department": "={{ $json.output.department }}",
+            "Summary": "={{ $json.output.summary }}",
+            "Recommended Action": "={{ $json.output.recommended_action }}",
+            "AI Draft Reply": "={{ $json.output.draft_reply }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Customer name",
+              "displayName": "Customer name",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Billing",
+                  "value": "Billing"
+                },
+                {
+                  "name": "Technical Issue",
+                  "value": "Technical Issue"
+                },
+                {
+                  "name": "Account Access",
+                  "value": "Account Access"
+                },
+                {
+                  "name": "Bug Report",
+                  "value": "Bug Report"
+                },
+                {
+                  "name": "Feature Request",
+                  "value": "Feature Request"
+                },
+                {
+                  "name": "Refund",
+                  "value": "Refund"
+                },
+                {
+                  "name": "General Inquiry",
+                  "value": "General Inquiry"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "High",
+                  "value": "High"
+                },
+                {
+                  "name": "Medium",
+                  "value": "Medium"
+                },
+                {
+                  "name": "Low",
+                  "value": "Low"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Positive",
+                  "value": "Positive"
+                },
+                {
+                  "name": "Neutral",
+                  "value": "Neutral"
+                },
+                {
+                  "name": "Negative",
+                  "value": "Negative"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Department",
+              "displayName": "Department",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "Billing",
+                  "value": "Billing"
+                },
+                {
+                  "name": "Technical Support",
+                  "value": "Technical Support"
+                },
+                {
+                  "name": "Customer Service",
+                  "value": "Customer Service"
+                },
+                {
+                  "name": "Engineering",
+                  "value": "Engineering"
+                },
+                {
+                  "name": "Product Team",
+                  "value": "Product Team"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommended Action",
+              "displayName": "Recommended Action",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Draft Reply",
+              "displayName": "AI Draft Reply",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "548f2f72-f5d7-4f94-bb7d-0e9482096343",
+      "name": "Save Support Ticket",
+      "credentials": {
+        "airtableOAuth2Api": {
+          "id": "gvwDrnhUqN2ehwWF",
+          "name": "Airtable OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "57a956d3-4794-4469-acb9-7e1918656cd2",
+              "leftValue": "={{ $json.fields.Priority }}",
+              "rightValue": "High",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        0
+      ],
+      "id": "f9ed6851-f0af-4776-8199-830ab883d18b",
+      "name": "Check Ticket Priority"
+    },
+    {
+      "parameters": {
+        "sendTo": "roocnoyap@gmail.com",
+        "subject": "🚨 High Priority Support Ticket",
+        "message": "=<h2>High Priority Ticket Detected</h2>\n\n<p><strong>Customer</strong><br>\n{{ $('Prepare Support Ticket').item.json.customer_name }}</p>\n\n<p><strong>Subject</strong><br>\n{{ $('Prepare Support Ticket').item.json.subject }}</p>\n\n<p><strong>Category</strong><br>\n{{ $('AI Support Analysis').item.json.output.category }}</p>\n\n<p><strong>Summary</strong><br>\n{{ $('AI Support Analysis').item.json.output.summary }}</p>\n\n<p><strong>Recommended Action</strong><br>\n{{ $('AI Support Analysis').item.json.output.recommended_action }}</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        -96
+      ],
+      "id": "054b3230-5f86-4549-a58a-edc0a22d372b",
+      "name": "Notify Support Team",
+      "webhookId": "20a86734-febe-41ce-a8f4-1ffc776f1b0f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Support Ticket').item.json.email }}",
+        "subject": "=Re: {{ $('Prepare Support Ticket').item.json.subject }}",
+        "message": "=<p>Hi,</p>  <p>{{ $('AI Support Analysis').item.json.output.draft_reply }}</p>  <p>Kind regards,<br> Customer Support Team</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        96
+      ],
+      "id": "4a555da4-1af4-457c-a0e0-2456d9ce0711",
+      "name": "Send Customer Reply",
+      "webhookId": "56b464a2-7611-4505-a36a-a64bce08278f",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "New Support Email": {
+      "main": [
+        [
+          {
+            "node": "Prepare Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "AI Support Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Support Analysis",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Support Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Support Analysis": {
+      "main": [
+        [
+          {
+            "node": "Save Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "Check Ticket Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Ticket Priority": {
+      "main": [
+        [
+          {
+            "node": "Notify Support Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Customer Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "aabc7683-eb64-4049-8b23-410cf2e44df2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "uD0l2QUYwV2Gx75q",
+  "tags": []
+}

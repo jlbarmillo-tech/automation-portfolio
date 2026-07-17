@@ -1,0 +1,305 @@
+{
+  "name": "Project 11 — AI Facebook Messenger Customer Support Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "ea70307a-cbb8-4be3-a565-27f84bbdeff0",
+              "leftValue": "={{ $json.body.entry[0].messaging[0].message.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        224,
+        128
+      ],
+      "id": "428285dc-84eb-4ddc-8224-d5030449157c",
+      "name": "Validate Incoming Message"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are the AI Customer Support Agent for JLBA Automation Services.\n\nUse the provided business knowledge base to answer customer questions.\n\nRules:\n\n1. Be friendly and professional.\n2. Keep answers short and clear.\n3. Only answer using information from the knowledge base.\n4. If the answer is not found, say:\n\n\"I don't have that information at the moment. A human representative will assist you shortly.\"\n\n5. If the customer asks about refunds, complaints, billing disputes, or account issues, advise them that a human representative will contact them.\n\nCustomer Message:\n{{ $('Facebook Message Receiver').item.json.body.entry[0].messaging[0].message.text }}\n\nKnowledge Base:\n{{ $json.content }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        656,
+        -64
+      ],
+      "id": "2aa6af85-5d8c-42d9-9dbf-eb5d33dac1a5",
+      "name": "AI Customer Support Agent"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Facebook Message Receiver').item.json.body.entry[0].messaging[0].sender.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        768,
+        208
+      ],
+      "id": "0f791b93-fc87-4e93-95f9-ddb137a0d1b7",
+      "name": "Conversation Memory"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        608,
+        192
+      ],
+      "id": "5b40b9dd-9939-467c-a942-5d7da75349fe",
+      "name": "Gemini Customer Support Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v23.0/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer EAATmCYfZC93IBR8zlZB9iLNGhDCKBOmxw4Wc8IV5g0M2SQgpSwsrrydqWXK3ona6MEOIuS2kIa7rzOSUrUdMjYOF1t6WDoxyxuby9GuaFkJn1tZAJ0PH1sIlLxFTlZB9eYX0UQT0RvQVxZC05ZCbjh1jHkIOsmRdC53QZBJ8k3X7AE70mNrKhXreKTlgHGYEPnsJTxtLYb0QGJIHD7sg1iv"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "recipient.id",
+              "value": "={{ $('Facebook Message Receiver').item.json.body.entry[0].messaging[0].sender.id }}"
+            },
+            {
+              "name": "message.text",
+              "value": "={{ $('AI Customer Support Agent').item.json.output }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        992,
+        -176
+      ],
+      "id": "dbaf9973-c7b0-463d-8f02-5aa438bd7389",
+      "name": "Send Facebook Reply"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/plain"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        208,
+        -144
+      ],
+      "id": "147160ed-e57d-47ef-9311-c4f7fc6cae38",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "documentURL": "https://docs.google.com/document/d/1LBzZF9wj6FXqUj39WxJ6-8ZCCdqY4jGNgCPgp8bOicg/edit?tab=t.0"
+      },
+      "type": "n8n-nodes-base.googleDocs",
+      "typeVersion": 2,
+      "position": [
+        448,
+        16
+      ],
+      "id": "1de64dfd-56b4-4a44-92f3-43ee435ba9fe",
+      "name": "Business Knowledge Base",
+      "credentials": {
+        "googleDocsOAuth2Api": {
+          "id": "MxH2s8M3mHRLWW7q",
+          "name": "Google Docs OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "facebook-webhook",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        176
+      ],
+      "id": "c1f9673f-1533-4b69-b081-143c3e7bcc23",
+      "name": "Facebook Message Receiver",
+      "webhookId": "489d55fb-0e1e-4551-9aef-e06d58529e02"
+    },
+    {
+      "parameters": {
+        "path": "facebook-webhook",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        -32
+      ],
+      "id": "de8f725e-628d-445a-ab20-d91aef84c35a",
+      "name": "Facebook Messenger Webhook",
+      "webhookId": "8ef4a7c1-aa3b-47eb-8226-22ec796663ac"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Validate Incoming Message": {
+      "main": [
+        [
+          {
+            "node": "Business Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Conversation Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Customer Support Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Customer Support Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Customer Support Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Customer Support Agent": {
+      "main": [
+        [
+          {
+            "node": "Send Facebook Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond to Webhook": {
+      "main": [
+        []
+      ]
+    },
+    "Business Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "AI Customer Support Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Message Receiver": {
+      "main": [
+        [
+          {
+            "node": "Validate Incoming Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Messenger Webhook": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "29c12533-6b29-46aa-a20a-86de38348c15",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "ThME2daA4P2ztsMr",
+  "tags": []
+}

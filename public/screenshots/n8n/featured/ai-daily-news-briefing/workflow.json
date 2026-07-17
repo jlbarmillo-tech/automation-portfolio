@@ -1,0 +1,455 @@
+{
+  "name": "AI Daily News Briefing System",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -80,
+        96
+      ],
+      "id": "5a89b616-6cef-47f5-acb8-9644aa390fd9",
+      "name": "Daily 7AM Trigger"
+    },
+    {
+      "parameters": {
+        "url": "https://techcrunch.com/feed/",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        -176
+      ],
+      "id": "c6208224-e50c-4264-bde7-ccc30c2ff274",
+      "name": "Fetch TechCrunch"
+    },
+    {
+      "parameters": {
+        "url": "https://technologyreview.com/feed/",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        0
+      ],
+      "id": "b395bbb2-17d8-407b-ae14-9bba96b1d68a",
+      "name": "Fetch MIT Tech Review"
+    },
+    {
+      "parameters": {
+        "url": "https://www.rappler.com/feed/",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        -336
+      ],
+      "id": "28081b37-ea72-458a-8bf3-a3462b86cfc2",
+      "name": "Fetch Rappler"
+    },
+    {
+      "parameters": {
+        "url": "https://openai.com/news/rss.xml",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        320
+      ],
+      "id": "c14f9ffe-9e87-4867-ab21-acd5fc831215",
+      "name": "Fetch OpenAI News"
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/taobojlen/anthropic-rss-feed/main/anthropic_news_rss.xml",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        464
+      ],
+      "id": "0e4af525-54bd-4e80-aaa2-2a18db3f676e",
+      "name": "Fetch Anthropic News"
+    },
+    {
+      "parameters": {
+        "jsCode": "function parseRSS(xmlString) {\n  const articles = [];\n\n  try {\n    // Detect source from channel title\n    const channelTitleMatch = \n      xmlString.match(/<title><!\\[CDATA\\[(.*?)\\]\\]><\\/title>/) ||\n      xmlString.match(/<title>([^<]{1,100})<\\/title>/);\n    \n    let sourceName = 'Unknown';\n    if (channelTitleMatch) {\n      sourceName = channelTitleMatch[1]\n        .replace(/<[^>]*>/g, '')\n        .trim()\n        .substring(0, 40);\n    }\n\n    // Handle Atom feed format (The Verge uses this)\n    const isAtomFeed = xmlString.includes('<feed xmlns');\n    \n    let itemRegex;\n    if (isAtomFeed) {\n      itemRegex = /<entry>([\\s\\S]*?)<\\/entry>/g;\n    } else {\n      itemRegex = /<item>([\\s\\S]*?)<\\/item>/g;\n    }\n\n    let match;\n    let count = 0;\n\n    while ((match = itemRegex.exec(xmlString)) !== null && count < 5) {\n      const item = match[1];\n\n      // Title extraction\n      const titleMatch = \n        item.match(/<title><!\\[CDATA\\[(.*?)\\]\\]><\\/title>/) ||\n        item.match(/<title[^>]*type=\"html\"[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/title>/) ||\n        item.match(/<title[^>]*>([\\s\\S]{1,200}?)<\\/title>/);\n\n      // Link extraction — handles both RSS and Atom formats\n      const linkMatch = \n        item.match(/<link rel=\"alternate\"[^>]*href=\"([^\"]*)\"/) ||\n        item.match(/<link rel=\"alternate\" href=\"([^\"]*)\"/) ||\n        item.match(/<link[^>]+href=\"(https?:\\/\\/[^\"]+)\"/) ||\n        item.match(/<link href=\"([^\"]*)\"/) ||\n        item.match(/<link>(https?:\\/\\/[^<]*)<\\/link>/) ||\n        item.match(/<id>(https?:\\/\\/[^<]*)<\\/id>/);\n\n      // Description extraction\n      const descMatch = \n        item.match(/<description><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/description>/) ||\n        item.match(/<summary[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/summary>/) ||\n        item.match(/<summary[^>]*>([\\s\\S]*?)<\\/summary>/) ||\n        item.match(/<description>([\\s\\S]*?)<\\/description>/);\n\n      // Date extraction\n      const dateMatch = \n        item.match(/<pubDate>(.*?)<\\/pubDate>/) ||\n        item.match(/<published>(.*?)<\\/published>/) ||\n        item.match(/<updated>(.*?)<\\/updated>/);\n\n      if (titleMatch && linkMatch) {\n        const title = titleMatch[1]\n          .replace(/<[^>]*>/g, '')\n          .replace(/&amp;/g, '&')\n          .replace(/&lt;/g, '<')\n          .replace(/&gt;/g, '>')\n          .replace(/&quot;/g, '\"')\n          .trim();\n\n        const link = linkMatch[1].trim();\n\n        const description = descMatch\n          ? descMatch[1]\n              .replace(/<[^>]*>/g, '')\n              .replace(/&amp;/g, '&')\n              .replace(/&lt;/g, '<')\n              .replace(/&gt;/g, '>')\n              .trim()\n              .substring(0, 300)\n          : 'No description available';\n\n        const pubDate = dateMatch\n          ? dateMatch[1].trim()\n          : 'Unknown date';\n\n        if (title && title.length > 5 && link.startsWith('http')) {\n          articles.push({\n            source: sourceName,\n            title,\n            link,\n            description,\n            pubDate\n          });\n          count++;\n        }\n      }\n    }\n  } catch(e) {\n    console.log('Parse error:', e.message);\n  }\n\n  return articles;\n}\n\n// Get all items from all connected nodes\nconst allItems = $input.all();\nlet allArticles = [];\n\nallItems.forEach((item) => {\n  const xmlData = item.json.data;\n  if (xmlData && typeof xmlData === 'string') {\n    const articles = parseRSS(xmlData);\n    allArticles = allArticles.concat(articles);\n  }\n});\n\n// Format digest text for Gemini\nconst articleDigest = allArticles.map((article, index) => {\n  return `[${index + 1}] SOURCE: ${article.source}\nTitle: ${article.title}\nDate: ${article.pubDate}\nSummary: ${article.description}\nLink: ${article.link}`;\n}).join('\\n\\n---\\n\\n');\n\nreturn [{\n  json: {\n    total_articles: allArticles.length,\n    articles: allArticles,\n    digest_text: articleDigest,\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        592,
+        80
+      ],
+      "id": "c354b352-18dc-4732-9313-932417e4614d",
+      "name": "Parse All Feeds"
+    },
+    {
+      "parameters": {
+        "numberInputs": 6
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        416,
+        16
+      ],
+      "id": "a47f4793-789f-4ef6-a07f-47c80ff9692c",
+      "name": "Merge All Feeds"
+    },
+    {
+      "parameters": {
+        "url": "https://news.ycombinator.com/rss",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        160
+      ],
+      "id": "ae826bcd-3e5d-41fb-8f30-443bab3c59bc",
+      "name": "Fetch HackerNews"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a personal AI news analyst for an \nAI Automation Specialist based in Manila, \nPhilippines.\n\nYou have been given today's top articles \nfrom 6 tech and AI news sources.\n\nYour job is to create a concise, insightful \nmorning briefing that is relevant to someone \nwho:\n- Works with n8n, Zapier, and AI automation\n- Follows AI developments closely\n- Is building a freelance automation business\n- Wants to stay ahead in the automation space\n- Is based in the Philippines\n\nHere are today's articles:\n\n{{ $json.digest_text }}\n\nCreate a morning briefing with this exact \nstructure:\n\nGOOD MORNING! Here is your AI & Tech \nBriefing for [today's date].\n\nTOP STORIES TODAY:\nPick the 5 most relevant and interesting \nstories. For each one write:\n- Headline (the article title)\n- Why it matters (1-2 sentences explaining \n  relevance to AI automation work)\n- Source and link\n\nAI & AUTOMATION SPOTLIGHT:\nPick 1-2 stories specifically about AI tools, \nautomation platforms, or workflow technology. \nWrite 3-4 sentences about why this matters \nfor automation specialists.\n\nPHILIPPINES & BUSINESS:\nIf any articles are relevant to the \nPhilippines or Southeast Asian business, \nhighlight them here. If none, skip this \nsection.\n\nTODAY'S KEY TAKEAWAY:\nOne paragraph summarizing the most important \ntrend or insight from today's news that an \nAI automation specialist should know.\n\nQUICK READS:\nList the remaining articles as bullet points \nwith just the title and source — for \nscanning only.\n\nKeep the entire briefing under 600 words.\nWrite in a clear, professional but \nconversational tone.\nDo not use markdown formatting like ** or ##.\nUse plain text with clear section labels.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        752,
+        80
+      ],
+      "id": "ff62c72c-5c4b-45cc-ab87-5c067bf6494a",
+      "name": "Gemini News Reader"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        656,
+        288
+      ],
+      "id": "b1d43ae3-45b3-452b-94c9-f1da591b774c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EuQ1xejBtv4aV0i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Get the briefing from Gemini\nconst briefing = $json.output;\n\n// Clean up the text\nconst cleanBriefing = briefing\n  // Remove markdown bold\n  .replace(/\\*\\*(.*?)\\*\\*/g, '$1')\n  // Remove markdown headers\n  .replace(/##\\s/g, '')\n  .replace(/#\\s/g, '')\n  // Clean up excessive newlines\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\n// Create a Slack-friendly version\n// Slack uses *text* for bold instead of **text**\nconst slackBriefing = cleanBriefing\n  .replace(/TOP STORIES TODAY:/g, '*TOP STORIES TODAY:*')\n  .replace(/AI & AUTOMATION SPOTLIGHT:/g, '*AI & AUTOMATION SPOTLIGHT:*')\n  .replace(/PHILIPPINES & BUSINESS:/g, '*PHILIPPINES & BUSINESS:*')\n  .replace(/TODAY\\'S KEY TAKEAWAY:/g, '*TODAY\\'S KEY TAKEAWAY:*')\n  .replace(/QUICK READS:/g, '*QUICK READS:*');\n\n// Get today's date for subject line\nconst today = new Date();\nconst dateString = today.toLocaleDateString('en-US', {\n  weekday: 'long',\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric'\n});\n\nreturn [{\n  json: {\n    briefing_text: cleanBriefing,\n    slack_briefing: slackBriefing,\n    email_subject: `Your AI & Tech Morning Briefing — ${dateString}`,\n    generated_at: new Date().toISOString()\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        80
+      ],
+      "id": "b667c256-5b35-4c9c-8b69-d6bb163d5eb6",
+      "name": "Parse Briefing"
+    },
+    {
+      "parameters": {
+        "sendTo": "roocnoyap@gmail.com",
+        "subject": "={{ $json.email_subject }}",
+        "emailType": "text",
+        "message": "={{ $json.briefing_text }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        80
+      ],
+      "id": "a97d1620-e101-420a-b0b0-f1397a23c9d0",
+      "name": "Send Morning Briefing Email",
+      "webhookId": "2b9dfb8d-9bc5-473e-b9fa-c9bdf5deb0bf",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ns8gpvCuxD8Y5g8v",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "={{ $('Parse Briefing').item.json.slack_briefing }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1392,
+        80
+      ],
+      "id": "39cd0b80-d6a0-4982-9d71-10c56d81f3ed",
+      "name": "Post Morning Briefing to Slack",
+      "webhookId": "dab2843e-7afe-40dd-a5e2-fd77ce34b920",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 7AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch TechCrunch",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch MIT Tech Review",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch HackerNews",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Rappler",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch OpenAI News",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Fetch Anthropic News",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch OpenAI News": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 4
+          }
+        ]
+      ]
+    },
+    "Fetch Rappler": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Anthropic News": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 5
+          }
+        ]
+      ]
+    },
+    "Fetch MIT Tech Review": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Fetch TechCrunch": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge All Feeds": {
+      "main": [
+        [
+          {
+            "node": "Parse All Feeds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch HackerNews": {
+      "main": [
+        [
+          {
+            "node": "Merge All Feeds",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Parse All Feeds": {
+      "main": [
+        [
+          {
+            "node": "Gemini News Reader",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Gemini News Reader",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini News Reader": {
+      "main": [
+        [
+          {
+            "node": "Parse Briefing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Briefing": {
+      "main": [
+        [
+          {
+            "node": "Send Morning Briefing Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Morning Briefing Email": {
+      "main": [
+        [
+          {
+            "node": "Post Morning Briefing to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0457705e-9915-4691-b908-25fc303dd8b7",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9267919bb8599414fd3ff1bc25326c9ac4e634d5b70f128d74410ac675f34c58"
+  },
+  "nodeGroups": [],
+  "id": "MThMsmp99FDENil2",
+  "tags": []
+}

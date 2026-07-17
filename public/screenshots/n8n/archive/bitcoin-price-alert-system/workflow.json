@@ -1,0 +1,165 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "f2f8f390-85b9-4b31-b66d-d87505fe940f",
+      "name": "Run Price Check"
+    },
+    {
+      "parameters": {
+        "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "ae777401-d8b9-49ec-a747-2fcfdfb2feaa",
+      "name": "Get Bitcoin Price"
+    },
+    {
+      "parameters": {
+        "jsCode": "const price = $json.bitcoin.usd;\n\nreturn [{\n  json: {\n    bitcoin_price: price\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ],
+      "id": "61ef7634-9f23-467c-b04c-a2b6ff966479",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9dd1ed8d-13db-4bf0-9565-c2520b4223d4",
+              "leftValue": "={{ $json.bitcoin_price }}",
+              "rightValue": 60000,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        624,
+        0
+      ],
+      "id": "d3703f7a-9e61-472d-9af3-2d20a2015c8b",
+      "name": "Check Alert Threshold"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC3N5LLKW",
+          "mode": "list",
+          "cachedResultName": "bitcoin-alert"
+        },
+        "text": "=🚨 BITCOIN PRICE ALERT\n\nCurrent Price:\n${{ $json.bitcoin_price }}\n\nTarget Price:\n$60,000\n\nStatus:\nTarget reached.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        832,
+        -96
+      ],
+      "id": "426c561a-c51f-419e-b83a-54d13485f93a",
+      "name": "Send Bitcoin Alert",
+      "webhookId": "903e2fc1-e73f-4fe7-936b-ac89478e99ec",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Run Price Check": {
+      "main": [
+        [
+          {
+            "node": "Get Bitcoin Price",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Bitcoin Price": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Check Alert Threshold",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Alert Threshold": {
+      "main": [
+        [
+          {
+            "node": "Send Bitcoin Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "5b060fbf-ae97-41ca-9b21-170c8b3723a6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "gjZdOBROcUPMgDAf",
+  "tags": []
+}

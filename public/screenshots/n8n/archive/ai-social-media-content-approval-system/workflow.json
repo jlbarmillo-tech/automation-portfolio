@@ -1,0 +1,292 @@
+{
+  "name": "AI Social Media Content Approval System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1eMwcpLE9oyPXE89CBy-bidWLN2O--ISk5gLST0HWFWk",
+          "mode": "list",
+          "cachedResultName": "Social Media Content Submission (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eMwcpLE9oyPXE89CBy-bidWLN2O--ISk5gLST0HWFWk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 189609496,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1eMwcpLE9oyPXE89CBy-bidWLN2O--ISk5gLST0HWFWk/edit#gid=189609496"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d80a97b6-c73f-4e19-a2fe-3351fc5a6759",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3IyXs6KYgy29jyNo",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "2dfcf862-3fc1-44b6-9bf6-3436f054136d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a social media content reviewer.\n\nReview the submitted content.\n\nDetermine:\n\n1. status\n- Approved\n- Rejected\n\n2. reason\n\nSubmission Details\n\nPlatform:\n{{ $json.Platform }}\n\nTarget Audience:\n{{ $json[\"Intended Audience\"] }}\n\nPost Content:\n{{ $json[\"Post Content\"] }}\n\nApproval Rules\n\nApprove if:\n- Professional\n- Clear message\n- Appropriate for business use\n- No offensive language\n\nReject if:\n- Offensive content\n- Spam-like content\n- Excessive hype\n- Misleading claims\n- Unprofessional language\n\nIMPORTANT:\n\nReturn ONLY valid JSON.\n\nExample:\n\n{\n  \"status\": \"Approved\",\n  \"reason\": \"Professional content with a clear marketing message.\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "04df2e56-7bdd-4a4f-9eba-86cd58a66707",
+      "name": "AI Content Review Engine"
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $input.all()[0]?.json?.output;\n\ntext = text.replace(/```json/g, \"\");\ntext = text.replace(/```/g, \"\");\ntext = text.trim();\n\nconst result = JSON.parse(text);\n\nreturn [\n  {\n    json: {\n      ...$(\"Google Sheets Trigger\").first().json,\n      ...result,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "67ac3ed2-0f12-48f6-a7a7-a91f2c4cd31f",
+      "name": "Parse Review Result"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "Approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "f2738847-f4a0-4b63-b6ec-cd3378fa6f25"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "2d797e52-da63-462f-9284-930221553d5d",
+                    "leftValue": "={{ $json.status }}",
+                    "rightValue": "Rejected",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "3d831fb2-7d45-41c7-a12f-65da565a32a4",
+      "name": "Route Review Decision"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBJ0A7Q3H",
+          "mode": "list",
+          "cachedResultName": "content-approved"
+        },
+        "text": "=✅ CONTENT APPROVED\n\nPlatform:\n{{ $json.Platform }}\n\nCreator:\n{{ $json[\"Content Creator\"] }}\n\nTarget Audience:\n{{ $json[\"Intended Audience\"] }}\n\nPost Content:\n{{ $json[\"Post Content\"] }}\n\nAI Review:\n{{ $json.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        976,
+        -96
+      ],
+      "id": "1bee9da3-61f7-4158-9547-b07215b3e502",
+      "name": "Send a message",
+      "webhookId": "4f3194c8-b679-4b47-8fb6-a3edb1568633",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC33NC33N",
+          "mode": "list",
+          "cachedResultName": "content-review"
+        },
+        "text": "=❌ CONTENT REJECTED\n\nPlatform:\n{{ $json.Platform }}\n\nCreator:\n{{ $json[\"Content Creator\"] }}\n\nTarget Audience:\n{{ $json[\"Intended Audience\"] }}\n\nPost Content:\n{{ $json[\"Post Content\"] }}\n\nAI Feedback:\n{{ $json.reason }}\n\nAction:\nPlease revise and resubmit.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        976,
+        96
+      ],
+      "id": "5d9aeefb-80b7-4793-a230-353709941e35",
+      "name": "Notify Content Review Team",
+      "webhookId": "0545cc91-c64a-4dfa-9320-89affc5d7ff4",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Content Review Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Content Review Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Content Review Engine": {
+      "main": [
+        [
+          {
+            "node": "Parse Review Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Review Result": {
+      "main": [
+        [
+          {
+            "node": "Route Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Review Decision": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Content Review Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "9450630e-8f0b-46f6-8e1e-2cc4d4bf6904",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "vGmpQvliWGmNAFP4",
+  "tags": []
+}

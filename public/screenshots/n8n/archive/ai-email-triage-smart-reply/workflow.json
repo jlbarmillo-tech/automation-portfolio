@@ -1,0 +1,725 @@
+{
+  "name": "AI Email Triage & Smart Reply System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "106da88e-5d5e-49bf-9b24-b8642e427074",
+      "name": "Inbox Trigger 📥",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "282e0310-3fa4-403d-b22b-1f094ceb2db0",
+              "name": "email_subject",
+              "value": "={{ $json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "1143e8f1-f4b2-4b8c-a1e6-b50044e9a368",
+              "name": "sender_email",
+              "value": "={{ $json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "308af1f8-143f-4c5b-84b4-07c6034739d2",
+              "name": "sender_name",
+              "value": "={{ $json.from.value[0].name || \"Unknown\" }}",
+              "type": "string"
+            },
+            {
+              "id": "5fd84df7-6375-4786-9bbb-ae72f261f253",
+              "name": "thread_id",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            },
+            {
+              "id": "1fdd8846-93df-4081-bb8f-65e10aec5bfb",
+              "name": "message_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "7402f99d-a0d4-4e43-9935-e6dc19e97752",
+              "name": "email_body",
+              "value": "={{ $json.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "ignoreConversionErrors": false
+        }
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        160,
+        0
+      ],
+      "id": "ab40a527-92eb-4886-a025-203ac563bb37",
+      "name": "Prepare Email"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI email triage assistant.\n\nAnalyze the email below.\n\nSubject:\n{{ $('Prepare Email').item.json.email_subject }}\n\nBody:\n{{ $('Prepare Email').item.json.email_body }}\n\nClassify it into ONE of these categories:\n\n- Customer Support\n- Finance / Billing\n- Sales Inquiry\n- Technical Issue\n- Complaint\n- Partnership\n- Promotion / Spam\n- High Priority\n\nDetermine the business priority.\n\nUse these rules:\n\nCritical\n- Security incidents\n- Data loss\n- Production outages\n- Legal issues\n\nHigh\n- System notifications\n- Service interruptions\n- Account suspension\n- Billing failures\n- Infrastructure alerts\n\nNormal\n- Customer support\n- Technical questions\n- Product inquiries\n- Sales\n\nLow\n- Marketing\n- Promotions\n- Newsletters\n- General updates\n\nReturn ONLY the structured JSON.\n\nSummarize the email in one sentence.\n\nExplain briefly why you chose the category.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        320,
+        0
+      ],
+      "id": "88675647-84ed-4ad5-bea4-22c3a40ad6bd",
+      "name": "AI Email Classifier 🧠"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        208
+      ],
+      "id": "92d88773-dd4c-4e6e-ac4a-52f0540fd32f",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "x67f9aAPFf2WHX5e",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"category\": \"Customer Support\",\n  \"priority\": \"Normal\",\n  \"summary\": \"...\",\n  \"reason\": \"...\",\n  \"needs_human_review\": false,\n  \"department\": \"Support\",\n  \"confidence\": 0.96\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        208
+      ],
+      "id": "8470267a-e67d-4cff-8bc8-e9173724e52d",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        208
+      ],
+      "id": "e90a8b43-1e2b-4987-b87f-a1655db6aeef",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "x67f9aAPFf2WHX5e",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"reply\": \"\",\n  \"confidence\": 0.95,\n  \"requires_human_review\": false\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        928,
+        208
+      ],
+      "id": "627bdc63-f545-4e23-b277-ed60c8b94aa2",
+      "name": "Structured Output Parser1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f0f88afa-aedc-48f4-a37f-a36f3b139414",
+              "name": "department",
+              "value": "={{ $('AI Email Classifier 🧠').item.json.output.department }}",
+              "type": "string"
+            },
+            {
+              "id": "51863601-d12f-4e33-bf32-a1caaf0b19a3",
+              "name": "category",
+              "value": "={{ $('AI Email Classifier 🧠').item.json.output.category }}",
+              "type": "string"
+            },
+            {
+              "id": "dfff7f52-e496-4837-ab03-6659c9a2b738",
+              "name": "priority",
+              "value": "={{ $('AI Email Classifier 🧠').item.json.output.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "cb859d7e-d085-499d-9121-af800ef4f513",
+              "name": "subject",
+              "value": "={{ $('Prepare Email').item.json.email_subject }}",
+              "type": "string"
+            },
+            {
+              "id": "a06ec093-46bc-4dfd-9b15-471b9247d6ab",
+              "name": "body",
+              "value": "={{ $('Prepare Email').item.json.email_body }}",
+              "type": "string"
+            },
+            {
+              "id": "54a64827-d07f-48e9-a9a0-b3f9ba1332d0",
+              "name": "reply_goal",
+              "value": "={{\n({\n  \"Customer Support\": \"Answer the customer's question politely.\",\n  \"Technical Issue\": \"Help troubleshoot the issue without inventing information.\",\n  \"Finance / Billing\": \"Explain billing issues professionally and escalate if necessary.\",\n  \"Sales Inquiry\": \"Answer the inquiry and encourage booking a discovery call.\",\n  \"Complaint\": \"Apologize, acknowledge the concern, and escalate.\",\n  \"Partnership\": \"Respond professionally and express interest.\",\n  \"Promotion / Spam\": \"No reply needed.\",\n  \"High Priority\": \"Prepare a concise executive-level response.\"\n})[$('AI Email Classifier 🧠').item.json.output.category]\n}}",
+              "type": "string"
+            },
+            {
+              "id": "443fbd70-ad75-44c2-9d3d-57b4a9c3f763",
+              "name": "reply_tone",
+              "value": "={{\n({\n  \"Customer Support\":\"Friendly\",\n  \"Technical Issue\":\"Professional\",\n  \"Finance / Billing\":\"Professional\",\n  \"Sales Inquiry\":\"Persuasive\",\n  \"Complaint\":\"Empathetic\",\n  \"Partnership\":\"Professional\",\n  \"Promotion / Spam\":\"None\",\n  \"High Priority\":\"Executive\"\n})[$('AI Email Classifier 🧠').item.json.output.category]\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        608,
+        0
+      ],
+      "id": "2ecc1a54-f4de-4539-9f6e-ae46c1ba064f",
+      "name": "Prepare Reply Context 📝"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an enterprise AI email assistant.\n\nYour task is to generate a professional email reply.\n\nDepartment:\n{{ $('Prepare Reply Context 📝').item.json.department }}\n\nCategory:\n{{ $('Prepare Reply Context 📝').item.json.category }}\n\nPriority:\n{{ $('Prepare Reply Context 📝').item.json.priority }}\n\nReply Goal:\n{{ $('Prepare Reply Context 📝').item.json.reply_goal }}\n\nReply Tone:\n{{ $('Prepare Reply Context 📝').item.json.reply_tone }}\n\nOriginal Subject:\n{{ $('Prepare Reply Context 📝').item.json.subject }}\n\nCustomer Email:\n{{ $('Prepare Reply Context 📝').item.json.body }}\n\nCustomer Name:\n\n{{ $('Prepare Email').item.json.sender_name }}\n\nRules:\n\n- Be professional.\n- Be concise.\n- Never invent facts.\n- Never promise refunds.\n- Never promise deadlines.\n- If unsure, state that the appropriate team will investigate.\n- Match the requested tone.\n- Return ONLY the structured JSON.\n\nDo NOT include the email subject in your reply.\n\nStart directly with the greeting.\n\nExample:\n\nDear Customer,\n\nThank you for contacting us...\n\n\nIf Customer Name is not \"Unknown\",\nuse it in the greeting.\n\nOtherwise use:\n\nHello,",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        768,
+        0
+      ],
+      "id": "e5f5bf20-baa3-47cd-9326-6212315f46f8",
+      "name": "Universal AI Reply Generator 🤖"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ea053f32-03b9-4a84-b0b4-948963b1c9e0",
+              "name": "confidence",
+              "value": "={{ $json.output.confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "5ff7dec6-7ecb-468a-8b0f-50c1ed07bf5c",
+              "name": "category",
+              "value": "={{ $('Prepare Reply Context 📝').item.json.category }}",
+              "type": "string"
+            },
+            {
+              "id": "22de7dd5-1d3a-4870-8c3c-77d38d52f14a",
+              "name": "priority",
+              "value": "={{ $('Prepare Reply Context 📝').item.json.priority }}",
+              "type": "string"
+            },
+            {
+              "id": "61d3e27a-991b-4e20-889f-64af1bedb43d",
+              "name": "requires_human_review",
+              "value": "={{ $json.output.requires_human_review }}",
+              "type": "boolean"
+            },
+            {
+              "id": "6b86837c-a98e-49e0-9038-d99031f09d8c",
+              "name": "automation_action",
+              "value": "={{ ( $('Universal AI Reply Generator 🤖').item.json.output.requires_human_review || $('Prepare Reply Context 📝').item.json.priority === 'Critical' || $('Prepare Reply Context 📝').item.json.category === 'Complaint' ) ? 'HUMAN_REVIEW' : 'AUTO_DRAFT' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1072,
+        0
+      ],
+      "id": "32a735d5-1e32-446d-970f-4afb301abdc3",
+      "name": "Automation Decision Engine ⚙️"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.automation_action }}",
+                    "rightValue": "AUTO_DRAFT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "a50f21f9-a5b7-4be7-86f4-ea9814ccad37"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fd86d6fe-02bd-4324-bc15-686c57e98fb2",
+                    "leftValue": "={{ $json.automation_action }}",
+                    "rightValue": "HUMAN_REVIEW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1248,
+        0
+      ],
+      "id": "69acef5d-24d2-448a-a53b-aa9b5921a763",
+      "name": "Business Action Router 🚦"
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "=Re: {{ $('Prepare Email').item.json.email_subject }}",
+        "message": "={{ $('Universal AI Reply Generator 🤖').item.json.output.reply }}",
+        "options": {
+          "sendTo": "={{ $('Prepare Email').item.json.sender_email }}"
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        -112
+      ],
+      "id": "b3348392-c88b-40ca-805d-c083b503a6e8",
+      "name": "Create Gmail Draft 📧",
+      "webhookId": "e39c7f6d-a81e-4636-a3f7-e906475ce6f4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "addLabels",
+        "messageId": "={{ $('Prepare Email').item.json.message_id }}",
+        "labelIds": [
+          "Label_5475404182597618557"
+        ]
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        80
+      ],
+      "id": "1cc805c6-608f-4455-8729-5261f79ff4b3",
+      "name": "Label Human Review 🏷️",
+      "webhookId": "3c23584e-d472-4ba8-933c-13c4cc68bbe4",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=🚨 Email requires human review  \n\nFrom: {{ $('Prepare Email').item.json.sender_email }}  \n\nCategory: {{ $('Prepare Reply Context 📝').item.json.category }}  \n\nPriority: {{ $('Prepare Reply Context 📝').item.json.priority }}  \n\nReason: {{ $('AI Email Classifier 🧠').item.json.output.reason }}  \n\nSuggested Reply: {{ $('Universal AI Reply Generator 🤖').item.json.output.reply }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1584,
+        80
+      ],
+      "id": "685a8b6b-cf36-4940-a63e-5806552479da",
+      "name": "Notify Support Team 💬",
+      "webhookId": "1152f7ae-0b87-43ef-8d14-4e5553c92f26",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FckIbak_gAomz7hsaP7VNGaIFCYpXTQrq_7Pt6x2Ifw",
+          "mode": "list",
+          "cachedResultName": "AI Email Review Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FckIbak_gAomz7hsaP7VNGaIFCYpXTQrq_7Pt6x2Ifw/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Human Review Queue",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FckIbak_gAomz7hsaP7VNGaIFCYpXTQrq_7Pt6x2Ifw/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sender": "={{ $('Prepare Email').item.json.sender_email }}",
+            "Category": "={{ $('Prepare Reply Context 📝').item.json.category }}",
+            "Priority": "={{ $('Prepare Reply Context 📝').item.json.priority }}",
+            "Timestamp": "={{ $now }}",
+            "Subject": "={{ $('Prepare Email').item.json.email_subject }}",
+            "Reason": "={{ $('AI Email Classifier 🧠').item.json.output.reason }}",
+            "Status": "Pending Review",
+            "Confidence": "={{ $('Universal AI Reply Generator 🤖').item.json.output.confidence }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sender",
+              "displayName": "Sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Confidence",
+              "displayName": "Confidence",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1728,
+        80
+      ],
+      "id": "9bf78e38-9fb9-4755-a98e-bdc4d40b3e90",
+      "name": "Log Human Review 📊",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LdXXLdqGPHzuOQEo",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Inbox Trigger 📥": {
+      "main": [
+        [
+          {
+            "node": "Prepare Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Email": {
+      "main": [
+        [
+          {
+            "node": "AI Email Classifier 🧠",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Email Classifier 🧠",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Email Classifier 🧠",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Classifier 🧠": {
+      "main": [
+        [
+          {
+            "node": "Prepare Reply Context 📝",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Universal AI Reply Generator 🤖",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Universal AI Reply Generator 🤖",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Reply Context 📝": {
+      "main": [
+        [
+          {
+            "node": "Universal AI Reply Generator 🤖",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Universal AI Reply Generator 🤖": {
+      "main": [
+        [
+          {
+            "node": "Automation Decision Engine ⚙️",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Automation Decision Engine ⚙️": {
+      "main": [
+        [
+          {
+            "node": "Business Action Router 🚦",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Action Router 🚦": {
+      "main": [
+        [
+          {
+            "node": "Create Gmail Draft 📧",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Label Human Review 🏷️",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Label Human Review 🏷️": {
+      "main": [
+        [
+          {
+            "node": "Notify Support Team 💬",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Support Team 💬": {
+      "main": [
+        [
+          {
+            "node": "Log Human Review 📊",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "24bbec2e-9825-4e51-8858-ef00a32b2fbe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "vScyikS3LIZa4EMA",
+  "tags": []
+}

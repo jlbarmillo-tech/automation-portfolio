@@ -1,0 +1,299 @@
+{
+  "name": "Project 14 — AI Business Operations Dashboard Assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d56fb116-27de-4fdf-b782-e37355726f7f",
+              "name": "lead_count",
+              "value": "={{ $json['Lead Count'] }}",
+              "type": "number"
+            },
+            {
+              "id": "ea4a399c-bf83-4dde-91e3-bac22f961b92",
+              "name": "qualified_leads",
+              "value": "={{ $json['Qualified Leads'] }}",
+              "type": "number"
+            },
+            {
+              "id": "88b9e9b0-570f-4ef3-b0ce-d3b870f94d85",
+              "name": "support_tickets",
+              "value": "={{ $json['Support Tickets'] }}",
+              "type": "number"
+            },
+            {
+              "id": "fa84ba1e-9b26-4ea9-a377-5af9f498e075",
+              "name": "high_priority_tickets",
+              "value": "={{ $json['High Priority Tickets'] }}",
+              "type": "number"
+            },
+            {
+              "id": "0cb2d2bc-111e-485f-b6de-633e4bd6e6e3",
+              "name": "positive_reviews",
+              "value": "={{ $json['Positive Reviews'] }}",
+              "type": "number"
+            },
+            {
+              "id": "9ff2cff5-90d1-4141-b43c-ff95e6689587",
+              "name": "negative_reviews",
+              "value": "={{ $json['Negative Reviews'] }}",
+              "type": "number"
+            },
+            {
+              "id": "89137387-155b-4985-830a-7f350854a8eb",
+              "name": "sales_opportunities",
+              "value": "={{ $json['Sales Opportunities'] }}",
+              "type": "number"
+            },
+            {
+              "id": "3238ea20-5e46-4e01-b605-fd0b255f24ee",
+              "name": "closed_deals",
+              "value": "={{ $json['Closed Deals'] }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e22dfdaf-23cf-4ca9-8ff0-d50c1d1cc9fe",
+      "name": "Prepare KPI Data"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s",
+          "mode": "list",
+          "cachedResultName": "Businesss Operation Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s/edit#gid=0"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "941949e5-52e8-47c2-a1ed-f062a8180954",
+      "name": "Business Data Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3IyXs6KYgy29jyNo",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI Business Operations Analyst.\n\nAnalyze the following KPI data and generate an executive business summary.\n\nLead Count:\n{{ $json.lead_count }}\n\nQualified Leads:\n{{ $json.qualified_leads }}\n\nSupport Tickets:\n{{ $json.support_tickets }}\n\nHigh Priority Tickets:\n{{ $json.high_priority_tickets }}\n\nPositive Reviews:\n{{ $json.positive_reviews }}\n\nNegative Reviews:\n{{ $json.negative_reviews }}\n\nSales Opportunities:\n{{ $json.sales_opportunities }}\n\nClosed Deals:\n{{ $json.closed_deals }}\n\nProvide:\n\n1. Lead Summary\n2. Support Summary\n3. Customer Sentiment\n4. Sales Summary\n5. Key Insights\n6. Recommended Actions\n\nReturn ONLY valid JSON.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "2dab1882-4d09-4eec-9f7a-ee4950557a90",
+      "name": "AI Business Analyst"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"lead_summary\": \"Lead generation performance summary\",\n  \"support_summary\": \"Support team performance summary\",\n  \"customer_sentiment\": \"Customer sentiment analysis\",\n  \"sales_summary\": \"Sales performance summary\",\n  \"key_insights\": \"Important business insights\",\n  \"recommended_actions\": \"Recommended actions for management\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        208
+      ],
+      "id": "9a3723ac-f573-45e0-8139-a9c08b1b70e2",
+      "name": "Executive Summary Output Parser"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        208
+      ],
+      "id": "c9459a90-a416-434f-8705-7581c0d23aa9",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2ff9b30c-dbd2-49bf-9ba0-603f91d20eb2",
+              "name": "executive_report",
+              "value": "=📊 Daily Operations Summary  \nLead Summary: {{ $json.output.lead_summary }}  \nSupport Summary: {{ $json.output.support_summary }}  \nCustomer Sentiment: {{ $json.output.customer_sentiment }}  \nSales Summary: {{ $json.output.sales_summary }}  Key Insights: {{ $json.output.key_insights }}  \nRecommended Actions: {{ $json.output.recommended_actions }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "b5e55db0-067c-4b75-b0eb-6cf2268587a1",
+      "name": "Generate Executive Report"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "={{ $json.executive_report }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        976,
+        0
+      ],
+      "id": "16e83273-a4d5-4aa0-98ae-5a19ab3c1e47",
+      "name": "Slack Executive Brief",
+      "webhookId": "6f7a3f4d-809f-4eb7-9993-54f550608d50",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Business Data Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare KPI Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare KPI Data": {
+      "main": [
+        [
+          {
+            "node": "AI Business Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executive Summary Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Business Analyst",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Business Analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Business Analyst": {
+      "main": [
+        [
+          {
+            "node": "Generate Executive Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Executive Report": {
+      "main": [
+        [
+          {
+            "node": "Slack Executive Brief",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Executive Brief": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "642d1349-c4e8-4a57-a255-df8b6d0a730f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "8jgcFZDgedjvyRfu",
+  "tags": []
+}

@@ -1,0 +1,344 @@
+{
+  "name": "AI Resume Screening & Candidate Qualification System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1g_3VXHss1MAQgLltvqXB57tz4E-GJO43HbgHXvuSXN4",
+          "mode": "list",
+          "cachedResultName": "Job Application Trigger",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g_3VXHss1MAQgLltvqXB57tz4E-GJO43HbgHXvuSXN4/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1200428459,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1g_3VXHss1MAQgLltvqXB57tz4E-GJO43HbgHXvuSXN4/edit#gid=1200428459"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "051be173-9914-4468-b847-2875238ed145",
+      "name": "Job Application Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3IyXs6KYgy29jyNo",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"candidate_score\": \"string\",\n  \"reason\": \"string\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        384,
+        208
+      ],
+      "id": "5ce200e6-8f83-4906-9f05-ee8fd8937ae0",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        768,
+        0
+      ],
+      "id": "ed474e78-6818-4d16-928d-853c44dd1a4f",
+      "name": "Parse Candidate Assessment"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f1cba5e2-3ab0-4b2f-980b-b6a9ddb23d4d",
+              "leftValue": "={{ $json.output.candidate_score }}",
+              "rightValue": "Qualified",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        0
+      ],
+      "id": "309c516d-f67f-4493-a5f5-ce31eb04bfcd",
+      "name": "Evaluate Candidate Qualification"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=✅ QUALIFIED CANDIDATE  \n\nApplicant: {{ $('Job Application Trigger').item.json['Applicant Name'] }}  \n\nPosition: {{ $('Job Application Trigger').item.json['Position Applied'] }}  \n\nExperience: {{ $('Job Application Trigger').item.json['Years of Experience'] }}  \n\nCandidate Score:  {{ $json.output.candidate_score }}\n\nReason: {{ $json.output.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1184,
+        -112
+      ],
+      "id": "dc2ff1a8-1be7-4a3d-bfc2-9a848d14879e",
+      "name": "Notify Recruiter",
+      "webhookId": "67911ee7-f7ee-41f8-b287-4540acd7f25e",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=📁 CANDIDATE REVIEW  \n\nApplicant: {{ $('Job Application Trigger').item.json['Applicant Name'] }}  \n\nPosition: {{ $('Job Application Trigger').item.json['Position Applied'] }}  \n\nCandidate Score:  {{ $json.output.candidate_score }}\n\nReason: {{ $json.output.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1184,
+        96
+      ],
+      "id": "2681381d-9f85-432a-8e56-f096c450c3a3",
+      "name": "Archive Candidate Review",
+      "webhookId": "81a473f2-0f7e-4903-817f-9895646eb4f8",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "90e2cf3a-d8b6-4091-ab78-f126302604a7",
+              "leftValue": "={{ $json['Applicant Name'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "d083be47-b489-4801-96be-4aa1c56d2e21",
+              "leftValue": "={{ $json.Skills }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "875194a5-0b4b-4182-bd38-4f024866721f",
+      "name": "Validate Application Data"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "7a91e519-f0a3-464b-9893-fef987765a76",
+      "name": "Gemini Resume Screening Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an HR recruitment specialist.\n\nAnalyze the applicant information and determine:\n\n1. candidate_score\n- Qualified\n- Maybe\n- Not Qualified\n\n2. reason\n\nApplicant Information\n\nName:\n{{ $json[\"Applicant Name\"] }}\n\nPosition:\n{{ $json[\"Position Applied\"] }}\n\nYears Experience:\n{{ $json[\"Years of Experience\"] }}\n\nSkills:\n{{ $json.Skills }}\n\nScoring Rules\n\nQualified:\n- 3+ years experience\n- Relevant skills for the position\n\nMaybe:\n- Some relevant skills\n- Less than 3 years experience\n\nNot Qualified:\n- No relevant skills\n- No experience\n\nReturn ONLY valid JSON.\n\nExample:\n\n{\n  \"candidate_score\": \"Qualified\",\n  \"reason\": \"Applicant has strong experience and relevant skills.\"\n}",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "aee0a212-9f8d-474a-a268-d9b24be4c205",
+      "name": "AI Candidate Evaluation Engine"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Job Application Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Application Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Candidate Evaluation Engine",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Candidate Assessment": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Candidate Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Candidate Qualification": {
+      "main": [
+        [
+          {
+            "node": "Notify Recruiter",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Archive Candidate Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Application Data": {
+      "main": [
+        [
+          {
+            "node": "AI Candidate Evaluation Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Resume Screening Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Candidate Evaluation Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Candidate Evaluation Engine": {
+      "main": [
+        [
+          {
+            "node": "Parse Candidate Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "f14dfa4a-ba74-4fea-9219-c108ac9679f2",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "YKQVZ8g398FOFDeN",
+  "tags": []
+}

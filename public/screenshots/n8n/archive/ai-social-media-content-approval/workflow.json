@@ -1,0 +1,538 @@
+{
+  "name": "AI Social Media Content Approval System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1FBQr7jUHyGgam0Z7Cwq_6WDhjqOywswv2fl_s9XzjLc",
+          "mode": "list",
+          "cachedResultName": "Social Media Content Submission Form (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FBQr7jUHyGgam0Z7Cwq_6WDhjqOywswv2fl_s9XzjLc/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 86082838,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FBQr7jUHyGgam0Z7Cwq_6WDhjqOywswv2fl_s9XzjLc/edit#gid=86082838"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "603b7b25-a7c8-4c96-b261-8cebdc1ccca5",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3IyXs6KYgy29jyNo",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d0a1f9b4-af9e-430e-938d-188573313da7",
+              "name": "creator",
+              "value": "={{ $json['Content Creator'] }}",
+              "type": "string"
+            },
+            {
+              "id": "db3850c1-ef9a-49d0-8e1e-30be9bf8b441",
+              "name": "email",
+              "value": "={{ $json.Email }}",
+              "type": "string"
+            },
+            {
+              "id": "47abb2ca-bd12-4360-8617-ea93c919d839",
+              "name": "platform",
+              "value": "={{ $json.Platform }}",
+              "type": "string"
+            },
+            {
+              "id": "a31fdf03-894d-480a-aca7-995e3a86a7b8",
+              "name": "content_type",
+              "value": "={{ $json['Content Type'] }}",
+              "type": "string"
+            },
+            {
+              "id": "6675e222-10f1-4383-bc06-5b0e921c4ab6",
+              "name": "caption",
+              "value": "={{ $json['Content Caption'] }}",
+              "type": "string"
+            },
+            {
+              "id": "92f2ed40-c980-4a21-a3a8-96f5c17c6f7b",
+              "name": "cta",
+              "value": "={{ $json['Call to Action'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "82735952-e4bf-40db-8b93-91b97d78eaee",
+      "name": "Prepare Content Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI Social Media Content Reviewer.\n\nReview the submitted content and determine whether it should be approved for publishing.\n\nReview Criteria:\n\n1. Professional tone\n2. No misleading claims\n3. No spam language\n4. Brand-safe wording\n5. Clear call-to-action\n6. Suitable for business audiences\n\nContent Creator: {{ $json.creator }}\n\nPlatform: {{ $json.platform }}\n\nContent Type: {{ $json.content_type }}\n\nCaption: {{ $json.caption }}\n\nCall To Action: {{ $json.cta }}\n\nReturn ONLY valid JSON:\n\n{\n  \"approval_status\": \"Approved\",\n  \"quality_score\": 90,\n  \"brand_safe\": true,\n  \"reason\": \"Content meets publishing standards.\"\n}\n\nUse:\n\napproval_status = Approved or Rejected\n\nquality_score = 0-100\n\nbrand_safe = true or false",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "79ca3501-4533-4d4f-8767-29412dc17062",
+      "name": "AI Content Reviewer"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        288,
+        208
+      ],
+      "id": "44add3eb-b5d9-4dfe-b941-7f5f7f346e7a",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"approval_status\": \"Approved\",\n  \"quality_score\": 90,\n  \"brand_safe\": true,\n  \"reason\": \"Content is professional and aligned with brand standards.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        208
+      ],
+      "id": "340f56e2-83fc-40ff-9a51-f33af5802165",
+      "name": "Content Approval Output Parser"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s",
+          "mode": "list",
+          "cachedResultName": "Businesss Operation Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 170726627,
+          "mode": "list",
+          "cachedResultName": "Rejected Content Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s/edit#gid=170726627"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Creator": "={{ $('Google Sheets Trigger').item.json['Content Creator'] }}",
+            "Platform": "={{ $('Google Sheets Trigger').item.json.Platform }}",
+            "Caption": "={{ $('Google Sheets Trigger').item.json['Content Caption'] }}",
+            "Score": "={{ $('AI Content Reviewer').item.json.output.quality_score }}",
+            "Reason": "={{ $('AI Content Reviewer').item.json.output.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Creator",
+              "displayName": "Creator",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        96
+      ],
+      "id": "322b9333-bbb1-4f03-9d21-5ced7ebe75af",
+      "name": "Rejected Content Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LdXXLdqGPHzuOQEo",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s",
+          "mode": "list",
+          "cachedResultName": "Businesss Operation Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 476194469,
+          "mode": "list",
+          "cachedResultName": "Approved Content Sheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/11eZNLQdxDgGkDznvucjAYxHfrjp4emdFomSqokQU04s/edit#gid=476194469"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Creator": "={{ $('Google Sheets Trigger').item.json['Content Creator'] }}",
+            "Platform": "={{ $('Google Sheets Trigger').item.json.Platform }}",
+            "Score": "={{ $('AI Content Reviewer').item.json.output.quality_score }}",
+            "Reason": "={{ $('AI Content Reviewer').item.json.output.reason }}",
+            "Caption": "={{ $('Google Sheets Trigger').item.json['Content Caption'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Creator",
+              "displayName": "Creator",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Platform",
+              "displayName": "Platform",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Score",
+              "displayName": "Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Caption",
+              "displayName": "Caption",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        -96
+      ],
+      "id": "52633089-58d7-4002-8665-487cfaf9bbda",
+      "name": "Approved Content Sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LdXXLdqGPHzuOQEo",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=⚠️ Content Rejected  \n\nCreator: {{ $('Prepare Content Data').item.json.creator }}  \n\nScore: {{ $('AI Content Reviewer').item.json.output.quality_score }}\n\nReason: {{ $('AI Content Reviewer').item.json.output.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        976,
+        96
+      ],
+      "id": "92d6cbbd-275d-41fd-80b0-b1ac34f8fd58",
+      "name": "Slack Content Review",
+      "webhookId": "9591c376-f9b6-4a58-adcd-ecbf33ee8285",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=✅ Content Approved  \n\nCreator: {{ $('Prepare Content Data').item.json.creator }}  \n\nPlatform: {{ $('Prepare Content Data').item.json.platform }}  \n\nScore: {{ $('AI Content Reviewer').item.json.output.quality_score }}\n\nCaption: {{ $('Prepare Content Data').item.json.caption }}  \n\nReason: {{ $('AI Content Reviewer').item.json.output.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        976,
+        -96
+      ],
+      "id": "b7bad9d7-60a5-4151-a37a-49d5dee88814",
+      "name": "Slack Approved Content",
+      "webhookId": "d5699c39-8c62-4d2a-908b-a16fdb4a17c3",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e1651843-3446-4801-8225-931a55d1e9e8",
+              "leftValue": "={{ $json.output.approval_status }}",
+              "rightValue": "Approved",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        768,
+        0
+      ],
+      "id": "18c3b167-4ae6-46d6-8d9c-75e1da056a06",
+      "name": "Evaluate Approval Status"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Content Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Content Data": {
+      "main": [
+        [
+          {
+            "node": "AI Content Reviewer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Content Reviewer",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Content Approval Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Content Reviewer",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Content Reviewer": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Approval Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Content Review": {
+      "main": [
+        [
+          {
+            "node": "Rejected Content Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack Approved Content": {
+      "main": [
+        [
+          {
+            "node": "Approved Content Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Approval Status": {
+      "main": [
+        [
+          {
+            "node": "Slack Approved Content",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Content Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "514abb2a-05cf-4021-bf26-d4256ac40193",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "vmifCiKAd6veKJG7",
+  "tags": []
+}

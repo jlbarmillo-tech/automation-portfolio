@@ -1,0 +1,395 @@
+{
+  "name": "AI_Customer_Support_Escalation_System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "37ab0c83-b5c3-4058-af36-e029d4b4e362",
+      "name": "Support Ticket Trigger",
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer support escalation specialist.\n\nAnalyze the support ticket.\n\nDetermine:\n\n1. urgency\n- Low\n- Medium\n- High\n- Critical\n\n2. reason\n\nTicket Subject:\n{{ $json.Subject }}\n\nTicket Body:\n{{ $json.textPlain || $json.snippet }}\n\nUrgency Rules\n\nLow:\n- General questions\n- How-to requests\n- Non-urgent issues\n\nMedium:\n- Individual user issue\n- Workaround available\n- Limited business impact\n\nHigh:\n- Financial issue\n- Billing dispute\n- Major account problem\n- Significant customer impact\n\nCritical:\n- System outage\n- Multiple users affected\n- Security issue\n- Entire company unable to use service\n\nIMPORTANT:\n\nReturn ONLY valid JSON.\n\nExample output:\n\n{\n  \"urgency\": \"High\",\n  \"reason\": \"Customer reports incorrect billing charge.\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "1cf5a329-c877-415c-83fe-6b51500cdf99",
+      "name": "AI Escalation Engine"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "67038613-2ea4-4bf9-b698-6692ba8a1078",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $input.all()[0]?.json?.output;\n\ntext = text.replace(/```json/g, \"\");\ntext = text.replace(/```/g, \"\");\ntext = text.trim();\n\nconst result = JSON.parse(text);\n\nreturn [\n  {\n    json: {\n      ...$(\"Support Ticket Trigger\").first().json,\n      ...result,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "07b55f90-f0bd-404f-88f3-9d9629e2e82a",
+      "name": "Parse Escalation Result"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBTQWG5C5",
+          "mode": "list",
+          "cachedResultName": "critical-incidents"
+        },
+        "text": "=CRITICAL INCIDENT \n\nSubject: {{ $json.Subject }}  \n\nReason: {{ $json.snippet }}  \n\nUrgency: {{ $json.urgency }}    \n\nImmediate attention required.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        992,
+        352
+      ],
+      "id": "2d4e01f6-85c8-494d-9937-05cb2f880376",
+      "name": "Notify Critical Incident Channel",
+      "webhookId": "e48adca7-a521-4073-b67f-9c70a2eaf29e",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBQS5F4RH",
+          "mode": "list",
+          "cachedResultName": "team-lead-alerts"
+        },
+        "text": "=⚠️ HIGH PRIORITY TICKET  \n\nSubject: {{ $json.Subject }}\n\nReason: {{ $json.snippet }}\n\nUrgency: {{ $json.urgency }}  \n\nAction Required: Review immediately.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        992,
+        176
+      ],
+      "id": "26fabafe-298c-4f4d-b168-bb260a5a5387",
+      "name": "Notify Team Lead",
+      "webhookId": "114db1ba-a254-4a7d-b477-da091cfffda8",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBTQLLSLD",
+          "mode": "list",
+          "cachedResultName": "priority-queue"
+        },
+        "text": "=MEDIUM PRIORITY TICKET      \n\nSubject: {{ $json.Subject }}    \n\nReason: {{ $json.snippet }}    \n\nUrgency: {{ $json.urgency }}  ",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        992,
+        -16
+      ],
+      "id": "8054d0c4-03aa-42a2-9e97-627b3fc4a22c",
+      "name": "Notify Priority Queue",
+      "webhookId": "f7ecda34-d4af-488e-bb78-bdedfe1322f4",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC0RL4VK6",
+          "mode": "list",
+          "cachedResultName": "support-queue"
+        },
+        "text": "=LOW PRIORITY TICKET    \n\nSubject: {{ $json.Subject }}  \n\nReason: {{ $json.snippet }}  \n\nUrgency: {{ $json.urgency }}  ",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        992,
+        -176
+      ],
+      "id": "4375c0e6-0d28-4b46-90ab-b41e98c253d0",
+      "name": "Notify Support Queue",
+      "webhookId": "849d65e5-a581-4869-b760-6cdfc6eb8612",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "Low",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ea781bd1-d75a-45e8-9202-31ff4c1a1b94"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "66ad3397-3fc0-4be0-abc1-5ee084dc4bec",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "Medium",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c6d940fd-6150-4ce9-bc94-a765d6004392",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "High",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d9d1225d-6ded-4e8b-b6ca-1428526efd3b",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "Critical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        -32
+      ],
+      "id": "1b84c54c-8b43-4e04-969a-0d373a7f6b9a",
+      "name": "Route by urgency"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Support Ticket Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Escalation Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Escalation Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Escalation Engine": {
+      "main": [
+        [
+          {
+            "node": "Parse Escalation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Escalation Result": {
+      "main": [
+        [
+          {
+            "node": "Route by urgency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by urgency": {
+      "main": [
+        [
+          {
+            "node": "Notify Support Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Priority Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Team Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Critical Incident Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "94698376-b44e-4828-afdd-b6a14403c2ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "Rd5re8ZfaOapj9c1",
+  "tags": []
+}

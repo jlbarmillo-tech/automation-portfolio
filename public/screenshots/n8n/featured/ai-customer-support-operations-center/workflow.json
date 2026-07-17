@@ -1,0 +1,737 @@
+{
+  "name": "AI_Customer_Support_Escalation_System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -992,
+        176
+      ],
+      "id": "cf3bf593-d06b-4b86-b8ce-78af2af12d5c",
+      "name": "Support Ticket Trigger",
+      "alwaysOutputData": false,
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ns8gpvCuxD8Y5g8v",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer support escalation specialist.\n\nAnalyze the support ticket.\n\nDetermine:\n\n1. urgency\n- Low\n- Medium\n- High\n- Critical\n\n2. reason\n\nTicket Subject:\n{{ $json.Subject }}\n\nTicket Body:\n{{ $json.textPlain || $json.snippet }}\n\nUrgency Rules\n\nLow:\n- General questions\n- How-to requests\n- Non-urgent issues\n\nMedium:\n- Individual user issue\n- Workaround available\n- Limited business impact\n\nHigh:\n- Financial issue\n- Billing dispute\n- Major account problem\n- Significant customer impact\n\nCritical:\n- System outage\n- Multiple users affected\n- Security issue\n- Entire company unable to use service\n\nIMPORTANT:\n\nReturn ONLY valid JSON.\n\nExample output:\n\n{\n  \"urgency\":\"High\",\n  \"category\":\"Billing\",\n  \"sentiment\":\"Frustrated\",\n  \"resolution\":\"Human\",\n  \"reason\":\"Duplicate billing charge reported.\",\n  \"estimated_response\":\"Within 1 hour\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -784,
+        176
+      ],
+      "id": "36a33718-2c22-46e7-9944-2d3bfbd2721e",
+      "name": "AI Escalation Engine"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -912,
+        384
+      ],
+      "id": "9a5aa9e4-30b6-4ba6-8009-444d33eca7d2",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EuQ1xejBtv4aV0i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $input.all()[0]?.json?.output;\n\ntext = text.replace(/```json/g, \"\");\ntext = text.replace(/```/g, \"\");\ntext = text.trim();\n\nconst result = JSON.parse(text);\n\nreturn [\n  {\n    json: {\n      ...$(\"Support Ticket Trigger\").first().json,\n      ...result,\n    },\n  },\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        176
+      ],
+      "id": "347d272a-aeb1-4ee7-a279-46a682348221",
+      "name": "Parse Escalation Result"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBTQWG5C5",
+          "mode": "list",
+          "cachedResultName": "critical-incidents"
+        },
+        "text": "=🔴 CRITICAL INCIDENT\n\nCustomer:\n{{ $('Support Ticket Trigger').item.json.From }}\n\nSubject:\n{{ $('Support Ticket Trigger').item.json.Subject }}\n\nCategory:\n{{ $('Parse Escalation Result').item.json.category }}\n\nSentiment:\n{{ $('Parse Escalation Result').item.json.sentiment }}\n\nUrgency:\n{{ $('Parse Escalation Result').item.json.urgency }}\n\nReason:\n{{ $('Parse Escalation Result').item.json.reason }}\n\nEstimated Response:\n{{ $('Parse Escalation Result').item.json.estimated_response }}\n\n🚨 Immediate action required.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        624,
+        576
+      ],
+      "id": "0b8cc8ba-aa79-4f92-97a7-5fc86fc7f76b",
+      "name": "Notify Critical Incident Channel",
+      "webhookId": "e48adca7-a521-4073-b67f-9c70a2eaf29e",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBQS5F4RH",
+          "mode": "list",
+          "cachedResultName": "team-lead-alerts"
+        },
+        "text": "=🟠 HIGH PRIORITY SUPPORT REQUEST\n\nCustomer:\n{{ $('Support Ticket Trigger').item.json.From }}\n\nSubject:\n{{ $('Support Ticket Trigger').item.json.Subject }}\n\nCategory:\n{{ $('Parse Escalation Result').item.json.category }}\n\nSentiment:\n{{ $('Parse Escalation Result').item.json.sentiment }}\n\nUrgency:\n{{ $('Parse Escalation Result').item.json.urgency }}\n\nReason:\n{{ $('Parse Escalation Result').item.json.reason }}\n\nEstimated Response:\n{{ $('Parse Escalation Result').item.json.estimated_response }}\n\n⚠ Please review immediately.",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        624,
+        400
+      ],
+      "id": "352718e2-b2b3-4ce3-8edf-35b5eaa5774e",
+      "name": "Notify Team Lead",
+      "webhookId": "114db1ba-a254-4a7d-b477-da091cfffda8",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBTQLLSLD",
+          "mode": "list",
+          "cachedResultName": "priority-queue"
+        },
+        "text": "=🟡 MEDIUM PRIORITY SUPPORT REQUEST\n\nCustomer:\n{{ $('Support Ticket Trigger').item.json.From }}\n\nSubject:\n{{ $('Support Ticket Trigger').item.json.Subject }}\n\nCategory:\n{{ $('Parse Escalation Result').item.json.category }}\n\nSentiment:\n{{ $('Parse Escalation Result').item.json.sentiment }}\n\nUrgency:\n{{ $('Parse Escalation Result').item.json.urgency }}\n\nReason:\n{{ $('Parse Escalation Result').item.json.reason }}\n\nEstimated Response:\n{{ $('Parse Escalation Result').item.json.estimated_response }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        624,
+        240
+      ],
+      "id": "798c2a69-a9ed-4d41-b839-c8d78982960f",
+      "name": "Notify Priority Queue",
+      "webhookId": "f7ecda34-d4af-488e-bb78-bdedfe1322f4",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC0RL4VK6",
+          "mode": "list",
+          "cachedResultName": "support-queue"
+        },
+        "text": "=🟢 LOW PRIORITY SUPPORT REQUEST\n\nCustomer:\n{{ $('Support Ticket Trigger').item.json.From }}\n\nSubject:\n{{ $('Support Ticket Trigger').item.json.Subject }}\n\nCategory:\n{{ $('Parse Escalation Result').item.json.category }}\n\nSentiment:\n{{ $('Parse Escalation Result').item.json.sentiment }}\n\nUrgency:\n{{ $('Parse Escalation Result').item.json.urgency }}\n\nReason:\n{{ $('Parse Escalation Result').item.json.reason }}\n\nEstimated Response:\n{{ $('Parse Escalation Result').item.json.estimated_response }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        624,
+        80
+      ],
+      "id": "9783021b-92ce-460d-bb7b-080ac4893976",
+      "name": "Notify Support Queue",
+      "webhookId": "849d65e5-a581-4869-b760-6cdfc6eb8612",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('Append row in sheet').item.json.Urgency }}",
+                    "rightValue": "Low",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "ea781bd1-d75a-45e8-9202-31ff4c1a1b94"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "66ad3397-3fc0-4be0-abc1-5ee084dc4bec",
+                    "leftValue": "={{ $('Append row in sheet').item.json.Urgency }}",
+                    "rightValue": "Medium",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c6d940fd-6150-4ce9-bc94-a765d6004392",
+                    "leftValue": "={{ $('Append row in sheet').item.json.Urgency }}",
+                    "rightValue": "High",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d9d1225d-6ded-4e8b-b6ca-1428526efd3b",
+                    "leftValue": "={{ $('Append row in sheet').item.json.Urgency }}",
+                    "rightValue": "Critical",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        224
+      ],
+      "id": "00d71748-8846-4581-aa39-7b8930032148",
+      "name": "Route by urgency"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Parse Escalation Result').item.json.From }}",
+        "subject": "We've Received Your Support Request",
+        "emailType": "text",
+        "message": "=Hello,  \n\nThank you for contacting our support team.  \n\nWe've received your request.  \n\nUrgency:  {{ $('Parse Escalation Result').item.json.urgency }}\nEstimated Response:  {{ $('Parse Escalation Result').item.json.estimated_response }}\n\nOur team will review your issue shortly.  \n\nThank you.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        176
+      ],
+      "id": "24966881-d6fd-43ea-b09b-d1f5c5bbeb80",
+      "name": "Send Customer Acknowledgement1",
+      "webhookId": "6617e5f8-228d-4ee1-90e4-d66809bcc256",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ns8gpvCuxD8Y5g8v",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "10odXlAyhXzHXq8_oZvAZt04NApWmzJa47hPSzpg7UYs",
+          "mode": "list",
+          "cachedResultName": "Log Ticket1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10odXlAyhXzHXq8_oZvAZt04NApWmzJa47hPSzpg7UYs/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/10odXlAyhXzHXq8_oZvAZt04NApWmzJa47hPSzpg7UYs/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Date": "={{ $now }}",
+            "Sender": "={{ $json.Subject }}",
+            "Subject": "={{ $json.Subject }}",
+            "Category": "={{ $json.category }}",
+            "Urgency": "={{ $json.urgency }}",
+            "Sentiment": "={{ $json.sentiment }}",
+            "Resolution": "={{ $json.resolution }}",
+            "Reason": "={{ $json.reason }}",
+            "Estimated Response": "={{ $json.estimated_response }}",
+            "Status": "Open"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sender",
+              "displayName": "Sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Urgency",
+              "displayName": "Urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sentiment",
+              "displayName": "Sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Resolution",
+              "displayName": "Resolution",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Estimated Response",
+              "displayName": "Estimated Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -224,
+        176
+      ],
+      "id": "17cf3e88-ddb6-40a1-b4ae-e2e814f48406",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "DG2Gy9aS0vExKXJG",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "cd4d54f8-164c-4b8f-b193-7f7c723ed3b7",
+              "leftValue": "={{ $('Parse Escalation Result').item.json.resolution }}",
+              "rightValue": "Automated",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        176,
+        176
+      ],
+      "id": "1e995594-ead2-4e4d-b752-8940b74d0c17",
+      "name": "Can AI Resolve?"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        48
+      ],
+      "id": "8b61ca81-a097-4062-8168-dd2dbe89fbe7",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EuQ1xejBtv4aV0i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Support Ticket Trigger').item.json.From }}",
+        "subject": "Regarding Your Support Request",
+        "emailType": "text",
+        "message": "={{ $json.output }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        752,
+        -128
+      ],
+      "id": "dfda130f-1ed4-4f6f-b6ed-9c8fe069819a",
+      "name": "Send AI Resolution",
+      "webhookId": "238194b2-1bf2-4931-8981-dca6c707b381",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ns8gpvCuxD8Y5g8v",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an experienced customer support representative.\n\nYour job is to write a friendly, professional, and concise reply to the customer.\n\nCustomer Subject:\n{{ $('Support Ticket Trigger').item.json.Subject }}\n\nCustomer Message:\n{{ $('Support Ticket Trigger').item.json.textPlain || $('Support Ticket Trigger').item.json.snippet }}\n\nIssue Category:\n{{ $('Parse Escalation Result').item.json.category }}\n\nReason:\n{{ $('Parse Escalation Result').item.json.reason }}\n\nEstimated Response:\n{{ $('Parse Escalation Result').item.json.estimated_response }}\n\nInstructions:\n\n• Answer only if the issue is simple.\n• Examples:\n    - Password reset\n    - Invoice copy request\n    - Basic account question\n    - General information\n\n• Do not promise refunds.\n• Do not make policy decisions.\n• Be polite and professional.\n• Keep the reply under 150 words.\n\nReturn ONLY the email body.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        400,
+        -128
+      ],
+      "id": "302efedb-fab3-4404-a906-0aadb77d089d",
+      "name": "Generate Resolution Email"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Support Ticket Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Escalation Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Escalation Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Escalation Engine": {
+      "main": [
+        [
+          {
+            "node": "Parse Escalation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Escalation Result": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by urgency": {
+      "main": [
+        [
+          {
+            "node": "Notify Support Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Priority Queue",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Team Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Critical Incident Channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Customer Acknowledgement1": {
+      "main": [
+        [
+          {
+            "node": "Can AI Resolve?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Send Customer Acknowledgement1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Can AI Resolve?": {
+      "main": [
+        [
+          {
+            "node": "Generate Resolution Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Route by urgency",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Resolution Email",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Priority Queue": {
+      "main": [
+        []
+      ]
+    },
+    "Notify Support Queue": {
+      "main": [
+        []
+      ]
+    },
+    "Notify Team Lead": {
+      "main": [
+        []
+      ]
+    },
+    "Notify Critical Incident Channel": {
+      "main": [
+        []
+      ]
+    },
+    "Generate Resolution Email": {
+      "main": [
+        [
+          {
+            "node": "Send AI Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b5f44214-74c8-4637-a2a3-9be059f170d9",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9267919bb8599414fd3ff1bc25326c9ac4e634d5b70f128d74410ac675f34c58"
+  },
+  "nodeGroups": [],
+  "id": "9zkzrv8NtIS4QPTM",
+  "tags": []
+}

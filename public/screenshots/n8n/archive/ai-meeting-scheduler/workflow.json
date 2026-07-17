@@ -1,0 +1,362 @@
+{
+  "name": "Project 08 — AI Meeting Scheduler & Appointment Qualification System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1mHE-J3dLg-ha00jjOAw2L9F8Sp_q-0zkLKj2Jbp2Wlg",
+          "mode": "list",
+          "cachedResultName": "Appointment Request Form (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mHE-J3dLg-ha00jjOAw2L9F8Sp_q-0zkLKj2Jbp2Wlg/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 593598204,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1mHE-J3dLg-ha00jjOAw2L9F8Sp_q-0zkLKj2Jbp2Wlg/edit#gid=593598204"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -48
+      ],
+      "id": "3c538e15-f53d-4298-b171-509dc08a83be",
+      "name": "Appointment Request Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3IyXs6KYgy29jyNo",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9ea60039-a1e4-44e9-b406-8b77daff1ac4",
+              "leftValue": "={{ $json['Full name'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "963da003-376a-41ac-90e3-1a3c16f097ea",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "70b1a9fb-8c12-4516-adaa-297bc1a96e53",
+              "leftValue": "={{ $json['Monthly Budget'] }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "354aa1ac-3399-45a5-a64a-7e556b894d59",
+              "leftValue": "={{ $json['Preferred Meeting Date'] }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        -48
+      ],
+      "id": "c842de0a-e63f-4e61-ab2e-59a93a9e6255",
+      "name": "Validate Appointment Request"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        176
+      ],
+      "id": "c044ddfb-5866-4e28-83ea-3a911fdf82f6",
+      "name": "Gemini Appointment Qualification Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a sales qualification specialist.\n\nAnalyze the appointment request and determine:\n\nqualification_status\n\nAllowed values:\n\n- Qualified\n- Maybe\n- Not Qualified\n\nreason\n\nAppointment Request\n\nName: {{ $json['Full name'] }}\n\n\nCompany: {{ $json[\"Company Name\"] }}\n\nBusiness Type: {{ $json['Business Type'] }}\n\nMonthly Budget: {{ $json['Monthly Budget'] }}\n\nNeed: {{ $json['What would you like help with?  '] }}\n\nScoring Rules\n\nQualified:\n- Budget is 1000 or higher\n- Clear business need\n\nMaybe:\n- Budget between 500 and 999\n- Need is somewhat clear\n\nNot Qualified:\n- Budget below 500\n- No clear business need\n\nReturn ONLY valid JSON.\nDo not return scores.\nDo not return percentages.\nDo not return explanations outside the JSON.",
+        "hasOutputParser": true,
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        432,
+        -64
+      ],
+      "id": "6b444d71-0304-44f5-a110-b553f0401dde",
+      "name": "AI Appointment Qualification Engine"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"qualification_status\": \"string\",\n  \"reason\": \"string\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        576,
+        144
+      ],
+      "id": "1934a024-7b91-4fff-b91c-231185dd4bed",
+      "name": "AI Appointment Qualification Engine1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Loop over input items and add a new field called 'myNewField' to the JSON of each one\nfor (const item of $input.all()) {\n  item.json.myNewField = 1;\n}\n\nreturn $input.all();"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        -64
+      ],
+      "id": "951dce77-d549-4568-a003-9f7e8e042fd5",
+      "name": "Parse Qualification Result"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f3d8c576-d9c5-47a1-9667-7e670e7894a6",
+              "leftValue": "={{ $json.output.qualification_status }}",
+              "rightValue": "Qualified",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        992,
+        -64
+      ],
+      "id": "42169dd6-9648-4a61-a178-67e9edb72763",
+      "name": "Evaluate Qualification"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC8ME3GQL",
+          "mode": "list",
+          "cachedResultName": "archive-request"
+        },
+        "text": "=📁 APPOINTMENT REVIEW  \nName: {{ $('Appointment Request Trigger').item.json['Full name'] }}\nCompany: {{ $('Appointment Request Trigger').item.json['Company Name'] }}  \nQualification: {{ $json.output.qualification_status }}\nReason: {{ $json.output.reason }}\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1200,
+        48
+      ],
+      "id": "bb614724-386e-4acd-b7e3-706f766ca42d",
+      "name": "Archive Appointment Request",
+      "webhookId": "b5fe3e31-c1ef-44fd-be0f-9ad91f4a72ad",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BC8MDAATW",
+          "mode": "list",
+          "cachedResultName": "sales-team"
+        },
+        "text": "=📅 QUALIFIED APPOINTMENT REQUEST  \n\nName: {{ $('Appointment Request Trigger').item.json['Full name'] }}\nCompany: {{ $('Appointment Request Trigger').item.json['Company Name'] }}  \nBusiness Type: {{ $('Appointment Request Trigger').item.json['Business Type'] }}  \nBudget: ${{ $('Appointment Request Trigger').item.json['Monthly Budget'] }}  \nMeeting Date: {{ $('Appointment Request Trigger').item.json['Preferred Meeting Date'] }}  Meeting Time: {{ $('Appointment Request Trigger').item.json['Preferred Meeting Time'] }}  Qualification: {{ $json.output.qualification_status }}\nReason: {{ $json.output.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        1200,
+        -160
+      ],
+      "id": "5bfc2a66-37ac-41a7-9bcd-8a7af4f5de51",
+      "name": "Notify Sales Team",
+      "webhookId": "0c5fd8be-0473-4ab6-8cd1-7571ab9cda5b",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "aWctgZyx31RxAfYv",
+          "name": "Slack OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Appointment Request Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Appointment Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Appointment Request": {
+      "main": [
+        [
+          {
+            "node": "AI Appointment Qualification Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Appointment Qualification Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Appointment Qualification Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Appointment Qualification Engine1": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Appointment Qualification Engine",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Appointment Qualification Engine": {
+      "main": [
+        [
+          {
+            "node": "Parse Qualification Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Qualification Result": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Qualification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Qualification": {
+      "main": [
+        [
+          {
+            "node": "Notify Sales Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Archive Appointment Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f371e2a2-cbd8-461e-bc98-78b0e77408d5",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "jiAS9kw4rEk0wyof",
+  "tags": []
+}

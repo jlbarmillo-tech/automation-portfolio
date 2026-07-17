@@ -1,0 +1,348 @@
+{
+  "name": "Project: AI Lead Qualification System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1uA_u-SWLZOhPKn0HD8HBWKyDRy4xma_Jbp3aVnzoHbY",
+          "mode": "list",
+          "cachedResultName": "Project: AI Lead Qualification System (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uA_u-SWLZOhPKn0HD8HBWKyDRy4xma_Jbp3aVnzoHbY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1130957395,
+          "mode": "list",
+          "cachedResultName": "Raw Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uA_u-SWLZOhPKn0HD8HBWKyDRy4xma_Jbp3aVnzoHbY/edit#gid=1130957395"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "1b0eab8a-72b6-4fd5-bcbe-01cd9e6bf86e",
+      "name": "Lead Form Submission Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3IyXs6KYgy29jyNo",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        80,
+        208
+      ],
+      "id": "d3506bc8-9d42-4208-bd41-8a9e409de6a7",
+      "name": "Gemini Lead Scoring Model1",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "jdzxjueqqVGIb0ks",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a B2B lead qualification specialist.\n\nAnalyze this lead and determine:\n\n1. lead_score\n- Hot\n- Warm\n- Cold\n\n2. reason\n\nLead Information\n\nName:\n{{ $json.Name }}\n\nCompany:\n{{ $json.Company }}\n\nBudget:\n{{ $json.Budget }}\n\nMessage:\n{{ $json.Message }}\n\n\nAnalyze the lead and provide:\n- lead_score (Hot, Warm, or Cold)\n- reason\n\nFollow the required output format.\n\nLead Score Rules:\n\nHot:\n- Budget above $20,000\n- Clear business need\n\nWarm:\n- Budget $5,000–$20,000\n- Interest shown but not urgent\n\nCold:\n- No budget\n- Just browsing\n\nIMPORTANT:\n\nReturn ONLY valid JSON.\n\nExample:\n\n{\n  \"lead_score\": \"Hot\",\n  \"reason\": \"Large budget and clear business need\"\n}\n\nDo not add explanations.\nDo not add markdown.\nDo not use lead_score: Hot format.\nReturn JSON only.\n",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        208,
+        0
+      ],
+      "id": "2771693b-96e0-4728-bb33-2118933d4ad4",
+      "name": "AI Lead Qualification Engine"
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $json.output;\n\n// Remove Gemini markdown wrappers\ntext = text.replace(/```json/g, '');\ntext = text.replace(/```/g, '');\ntext = text.trim();\n\nconst result = JSON.parse(text);\n\nreturn [{\n  json: {\n    ...$('Lead Form Submission Trigger').first().json,\n    ...result\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        560,
+        0
+      ],
+      "id": "b84f93ae-34bd-4e2b-ad50-2f1373ae1423",
+      "name": "Parse AI Response"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1uA_u-SWLZOhPKn0HD8HBWKyDRy4xma_Jbp3aVnzoHbY",
+          "mode": "list",
+          "cachedResultName": "Project: AI Lead Qualification System (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uA_u-SWLZOhPKn0HD8HBWKyDRy4xma_Jbp3aVnzoHbY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 214578410,
+          "mode": "list",
+          "cachedResultName": "Processed Data",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uA_u-SWLZOhPKn0HD8HBWKyDRy4xma_Jbp3aVnzoHbY/edit#gid=214578410"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.Timestamp }}",
+            "Name": "={{ $json.Name }}",
+            "Company": "={{ $json.Company }}",
+            "Budget": "={{ $json.Budget }}",
+            "Message": "={{ $json.Message }}",
+            "Lead Score": "={{ $json.lead_score }}",
+            "Reason": "={{ $json.reason }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Message",
+              "displayName": "Message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Lead Score",
+              "displayName": "Lead Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        768,
+        0
+      ],
+      "id": "fd0d4bd6-4810-467c-b372-48c52792083c",
+      "name": "Save Qualified Lead",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LdXXLdqGPHzuOQEo",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "bf333650-e490-4ccc-8371-f23207ddd7de",
+              "leftValue": "={{ $json['Lead Score'] }}",
+              "rightValue": "Hot",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        976,
+        0
+      ],
+      "id": "2399b4cb-658d-4d06-a063-e4326483d581",
+      "name": "Check Hot Lead Status"
+    },
+    {
+      "parameters": {
+        "sendTo": "roocnoyap@gmail.com",
+        "subject": "=🔥 HOT LEAD: {{ $json.Name }}",
+        "message": "=New Hot Lead Received  Name: {{ $json.Name }}  Company: {{ $json.Company }}  Budget: {{ $json.Budget }}  Message: {{ $json.Message }}  Lead Score: {{ $json['Lead Score'] }}  Reason: {{ $json.Reason }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1184,
+        -96
+      ],
+      "id": "482b7f3a-db08-48a4-996f-f369c4cb59da",
+      "name": "Notify Sales Team",
+      "webhookId": "799b2b04-67aa-4ec5-a635-96d1ec75b91e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Lead Form Submission Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Lead Qualification Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Lead Scoring Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Lead Qualification Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Lead Qualification Engine": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Save Qualified Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Qualified Lead": {
+      "main": [
+        [
+          {
+            "node": "Check Hot Lead Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Hot Lead Status": {
+      "main": [
+        [
+          {
+            "node": "Notify Sales Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a7abeaf6-4faf-4768-bbb1-b9eda3afecbd",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "xAtX5JDvhcXtSGGz",
+  "tags": []
+}

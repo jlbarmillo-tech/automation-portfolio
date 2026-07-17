@@ -1,0 +1,270 @@
+{
+  "name": "AI Research Assistant",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "82667f71-4fb5-406d-bbc1-a570544f7c35",
+      "name": "Research Request"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "Research Topic\n\n{{ $('Prepare Research Context').item.json.research_topic }}\n\nAudience\n\n{{ $('Prepare Research Context').item.json.audience }}\n\nReport Type\n\n{{ $('Prepare Research Context').item.json.report_type }}\n\nResearch Depth\n\n{{ $('Prepare Research Context').item.json.research_depth }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an AI Research Assistant.\n\nYou have access to a Wikipedia tool.\n\nWhenever factual information, definitions, historical background, technologies, industries, organizations, or concepts are required, ALWAYS use the Wikipedia tool before generating your response.\n\nYour goal is to produce a professional business research report.\n\nThe report must include:\n\n1. Executive Summary\n2. Key Findings\n3. Business Applications\n4. Challenges\n5. Recommendations\n\nRules:\n\n- Always use the Wikipedia tool first.\n- Base your report on the information returned by the tool.\n- Do not invent facts.\n- Keep the report concise, professional, and easy to understand.\n- Respond ONLY using the required JSON format."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "fbed5e60-be3c-43eb-b240-9bac06437768",
+      "name": "AI Research Agent"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        352,
+        208
+      ],
+      "id": "4d189345-c344-4d5e-907e-af8740c54b1c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "x67f9aAPFf2WHX5e",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"executive_summary\": \"...\",\n\t\"key_findings\": \"..\",\n  \"business_applications\": \"..\",\n  \"challenges\": \"..\",\n  \"recommendations\": \"..\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        224
+      ],
+      "id": "94e89820-590c-4313-bc95-6ca2b5d0c0a9",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolWikipedia",
+      "typeVersion": 1,
+      "position": [
+        512,
+        256
+      ],
+      "id": "8371e453-236a-4a9f-8890-8e5c45f446fd",
+      "name": "Wikipedia1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "95419629-1fe8-4f00-be39-11310440e86a",
+              "name": "research_report",
+              "value": "=<h2>📚 AI Research Report</h2>  <h3>Research Topic</h3>  <p><strong>{{ $('Prepare Research Context').item.json.research_topic }}</strong></p>  <hr>  <h3>Executive Summary</h3>  <p>{{ $('AI Research Agent').item.json.output.executive_summary }}</p>  <h3>Key Findings</h3>  <p>{{ $('AI Research Agent').item.json.output.key_findings }}</p>  <h3>Business Applications</h3>  <p>{{ $('AI Research Agent').item.json.output.business_applications }}</p>  <h3>Challenges</h3>  <p>{{ $('AI Research Agent').item.json.output.challenges }}</p>  <h3>Recommendations</h3>  <p>{{ $('AI Research Agent').item.json.output.recommendations }}</p>  <hr>  <p><em>Generated automatically by the AI Research Assistant workflow.</em></p>",
+              "type": "string"
+            },
+            {
+              "id": "01799a08-5080-4857-8dab-eb6962989308",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "d0e36260-adb4-4f9d-b060-b26ab0eee406",
+      "name": "Format Research Report"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "076aa6a4-e50b-4443-b23d-0c86b9047c4d",
+              "name": "research_topic",
+              "value": "Artificial Intelligence",
+              "type": "string"
+            },
+            {
+              "id": "780ebe6d-bcc5-4659-9106-241cc8f787b8",
+              "name": "audience",
+              "value": "Business Owner",
+              "type": "string"
+            },
+            {
+              "id": "2c7d37e8-94cf-4128-aecc-7b1f87feafcc",
+              "name": "report_type",
+              "value": "Executive Summary",
+              "type": "string"
+            },
+            {
+              "id": "c87ec4e4-6811-4b82-8665-53915eb0e35f",
+              "name": "depth",
+              "value": "Medium",
+              "type": "string"
+            },
+            {
+              "id": "87634c63-cbc2-45ed-9005-3c2dbad572ad",
+              "name": "email",
+              "value": "roocnoyap@gmail.com",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b269f2d5-e86b-478e-af4b-c1317196b532",
+      "name": "Prepare Research Context"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Research Context').item.json.email }}",
+        "subject": "=Research Report - {{ $('Prepare Research Context').item.json.research_topic }}",
+        "message": "={{ $json.research_report }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        976,
+        0
+      ],
+      "id": "52303740-6df1-4b14-aeb1-6059bed27d62",
+      "name": "Send Research Report",
+      "webhookId": "5954fe55-e993-43d9-a37b-24f2dabedb9e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Research Request": {
+      "main": [
+        [
+          {
+            "node": "Prepare Research Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Research Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Research Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Research Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Research Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wikipedia1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Research Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Research Context": {
+      "main": [
+        [
+          {
+            "node": "AI Research Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Research Report": {
+      "main": [
+        [
+          {
+            "node": "Send Research Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "ad936160-5324-4c95-9d09-7fd18169d0d3",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "e2C10JmeNcEV7NIX",
+  "tags": []
+}

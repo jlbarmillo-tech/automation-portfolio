@@ -1,0 +1,683 @@
+{
+  "name": "AI Email Classifier & Ticket Router",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {}
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -992,
+        224
+      ],
+      "id": "a4672466-f4ac-43d1-99c3-2a1ede709305",
+      "name": "Email Received Trigger",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ns8gpvCuxD8Y5g8v",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are a customer support ticket classifier.\n\nAnalyze the email and determine:\n\n1. category\n   - Sales\n   - Support\n   - Billing\n   - Spam\n\n2. reason\n\nEmail Subject:\n{{ $json.Subject }}\n\nEmail Body:\n{{ $json.textPlain || $json.snippet }}\n\nRules:\n\nSales:\n- Pricing inquiries\n- Product information\n- Demo requests\n\nSupport:\n- Login issues\n- Technical problems\n- Account access issues\n\nBilling:\n- Refunds\n- Charges\n- Invoices\n- Payment disputes\n\nSpam:\n- Promotions\n- Scams\n- Irrelevant messages\n\n\nHigh\n\nRefund disputes\n\nFraud\n\nAccount hacked\n\nUrgent payment issue\n\nVIP customer\n\n--------------------------------\n\nMedium\n\nTechnical issue\n\nLogin issue\n\nGeneral billing\n\n--------------------------------\n\nLow\n\nSales inquiry\n\nGeneral question\n\nSpam\n\nReturn ONLY valid JSON.\n\nExample:\n\nReturn ONLY valid JSON.\n\n{\n  \"category\": \"Sales | Support | Billing | Spam\",\n  \"priority\": \"High | Medium | Low\",\n  \"reason\": \"Short explanation\",\n  \"estimated_response\": \"Within 1 hour | Within 24 hours | Within 48 hours\"\n}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -784,
+        224
+      ],
+      "id": "26a95f3b-8e90-45b0-b4de-591c27242a43",
+      "name": "AI Ticket Classification Engine"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        -912,
+        432
+      ],
+      "id": "31cfab1e-9623-4037-95b0-b0618edeceaf",
+      "name": "Gemini Email Classification Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "9EuQ1xejBtv4aV0i",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let text = $json.output;\n\ntext = text.replace(/```json/g, '');\ntext = text.replace(/```/g, '');\ntext = text.trim();\n\nconst result = JSON.parse(text);\n\nreturn [{\n  json: {\n    ...$('Email Received Trigger').first().json,\n    ...result\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -496,
+        224
+      ],
+      "id": "7402e53d-7ed2-4a7b-9b2d-acd855b6ea3a",
+      "name": "Parse Classification Result"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9e350f27-d85f-4e10-b490-6dc3c6e1618b",
+                    "leftValue": "={{ $('Parse Classification Result').item.json.category }}",
+                    "rightValue": "Sales",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cbcec2e6-6e8a-4318-a3f4-820fe4918f71",
+                    "leftValue": "={{ $('Parse Classification Result').item.json.category }}",
+                    "rightValue": "Support",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bcb00894-2bfa-4555-9384-0b52eee6015b",
+                    "leftValue": "={{ $('Parse Classification Result').item.json.category }}",
+                    "rightValue": "Billing",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c061dc30-bf57-4b26-b9b1-37179c65870a",
+                    "leftValue": "={{ $('Parse Classification Result').item.json.category }}",
+                    "rightValue": "Spam",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -64,
+        192
+      ],
+      "id": "69fab38d-6753-4b04-9268-e542a365e816",
+      "name": "Route Ticket"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBMLVAM41",
+          "mode": "list",
+          "cachedResultName": "sales-ticket"
+        },
+        "text": "=💰 New Sales Inquiry  \n\nCustomer: {{ $('Email Received Trigger').item.json.From }}\n\nSubject: {{ $('Email Received Trigger').item.json.Subject }}\n\nPriority: {{ $('Parse Classification Result').item.json.priority }}\n\nReason: {{ $('Parse Classification Result').item.json.reason }}\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        144,
+        16
+      ],
+      "id": "777bdc30-26a8-47d0-ab09-8e04c9221420",
+      "name": "Notify Sales Team",
+      "webhookId": "86c92018-7d81-4659-92dd-dc0876362e8a",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBMLX095F",
+          "mode": "list",
+          "cachedResultName": "support-ticket"
+        },
+        "text": "=🛠 New Support Ticket\n\nCustomer: {{ $('Email Received Trigger').item.json.From }}\n\nSubject: {{ $('Email Received Trigger').item.json.Subject }}\n\nPriority: {{ $('Parse Classification Result').item.json.priority }}\n\nReason: {{ $('Parse Classification Result').item.json.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        144,
+        176
+      ],
+      "id": "3bd386cc-64b7-4853-bb1a-fc31967fd16f",
+      "name": "Notify Support Team",
+      "webhookId": "be01d717-582c-4d07-98dd-d63a7277d0d4",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBMLZ7Z41",
+          "mode": "list",
+          "cachedResultName": "billing-ticket"
+        },
+        "text": "=💳 New Billing Ticket\n\nCustomer: {{ $('Email Received Trigger').item.json.From }}\n\nSubject: {{ $('Email Received Trigger').item.json.Subject }}\n\nPriority: {{ $('Parse Classification Result').item.json.priority }}\n\nReason: {{ $('Parse Classification Result').item.json.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        144,
+        320
+      ],
+      "id": "848b68c1-b179-454e-bad7-bfbd9dcd6a2e",
+      "name": "Notify Billing Team",
+      "webhookId": "b484f8cc-c805-4c9d-9c8a-a93a647ab767",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BB6KKUZM2",
+          "mode": "list",
+          "cachedResultName": "spam-review"
+        },
+        "text": "=🚫 Potential Spam Detected\n\nCustomer: {{ $('Email Received Trigger').item.json.From }}\n\nSubject: {{ $('Email Received Trigger').item.json.Subject }}\n\nPriority: {{ $('Parse Classification Result').item.json.priority }}\n\nReason: {{ $('Parse Classification Result').item.json.reason }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        144,
+        480
+      ],
+      "id": "2c13fccb-e6e4-40a3-be0b-ea1ba9ae90e7",
+      "name": "Notify Spam Review Team",
+      "webhookId": "1761cb99-4602-40e0-b4cc-defe3dc13048",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Email Received Trigger').item.json.From }}",
+        "subject": "We've Received Your Request",
+        "emailType": "text",
+        "message": "=Hello,  Thank you for contacting us.  We've successfully received your email. \n\nCategory: {{ $('Parse Classification Result').item.json.category }}  \nPriority: {{ $('Parse Classification Result').item.json.priority }}  \nEstimated Response:  {{ $('Parse Classification Result').item.json.estimated_response }}\n\nOur team will review your request shortly.  Thank you.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        -208,
+        224
+      ],
+      "id": "f9fda58e-bf0d-4d89-8bfa-43cae3d70295",
+      "name": "Send Auto Reply",
+      "webhookId": "347a9631-0167-4687-95db-68b8139f7011",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ns8gpvCuxD8Y5g8v",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1BvXmNMod4_lm8mA8zPp84nGYBaArIJmeg2jE19u81Zk",
+          "mode": "list",
+          "cachedResultName": "Log Ticket",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BvXmNMod4_lm8mA8zPp84nGYBaArIJmeg2jE19u81Zk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1BvXmNMod4_lm8mA8zPp84nGYBaArIJmeg2jE19u81Zk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Sender": "={{ $('Email Received Trigger').item.json.From }}",
+            "Subject": "={{ $('Email Received Trigger').item.json.Subject }}",
+            "Category": "={{ $json.category }}",
+            "Priority": "={{ $json.priority }}",
+            "Reason": "={{ $json.reason }}",
+            "Date": "={{ $now }}",
+            "Estimated Response": "={{ $json.estimated_response }}",
+            "Status": "Open"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sender",
+              "displayName": "Sender",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Category",
+              "displayName": "Category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Priority",
+              "displayName": "Priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reason",
+              "displayName": "Reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Estimated Response",
+              "displayName": "Estimated Response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -352,
+        224
+      ],
+      "id": "8e0cd859-7edb-4f1e-a292-6465bb1e4849",
+      "name": "Log Ticket",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "DG2Gy9aS0vExKXJG",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "20cec9ad-c082-41ad-bb6f-6842ad5711bd",
+              "leftValue": "={{ $('Parse Classification Result').item.json.priority }}",
+              "rightValue": "High",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        352,
+        240
+      ],
+      "id": "a3ca9f32-e0f3-4035-98e6-7082a6e31f7b",
+      "name": "Check High Priority"
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0BBX9DQ96U",
+          "mode": "list",
+          "cachedResultName": "all-jlba"
+        },
+        "text": "=🚨 HIGH PRIORITY TICKET  \n\nCustomer:  {{ $('Email Received Trigger').item.json.From }}\nSubject:  {{ $('Email Received Trigger').item.json.Subject }}\nCategory:  {{ $('Parse Classification Result').item.json.category }}\nReason:  {{ $('Parse Classification Result').item.json.reason }}\n\nImmediate review recommended.\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        512,
+        128
+      ],
+      "id": "b1ff8a30-ed31-47fd-a42f-b939faeef2c8",
+      "name": "Escalate High Priority Ticket",
+      "webhookId": "8bf68c09-4d11-477a-9ba2-a14212e4713c",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "pWId9z1byWwEKH4b",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email Received Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Ticket Classification Engine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Email Classification Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Ticket Classification Engine",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Ticket Classification Engine": {
+      "main": [
+        [
+          {
+            "node": "Parse Classification Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Classification Result": {
+      "main": [
+        [
+          {
+            "node": "Log Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Ticket": {
+      "main": [
+        [
+          {
+            "node": "Notify Sales Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Support Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Billing Team",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Spam Review Team",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Auto Reply": {
+      "main": [
+        [
+          {
+            "node": "Route Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Support Team": {
+      "main": [
+        [
+          {
+            "node": "Check High Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Sales Team": {
+      "main": [
+        [
+          {
+            "node": "Check High Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Billing Team": {
+      "main": [
+        [
+          {
+            "node": "Check High Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Spam Review Team": {
+      "main": [
+        [
+          {
+            "node": "Check High Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Ticket": {
+      "main": [
+        [
+          {
+            "node": "Send Auto Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check High Priority": {
+      "main": [
+        [
+          {
+            "node": "Escalate High Priority Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "79b4dc0c-e3f3-4913-bd75-b4d52aff4e1b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9267919bb8599414fd3ff1bc25326c9ac4e634d5b70f128d74410ac675f34c58"
+  },
+  "nodeGroups": [],
+  "id": "Om7DUaSaJ2wSdcrg",
+  "tags": []
+}

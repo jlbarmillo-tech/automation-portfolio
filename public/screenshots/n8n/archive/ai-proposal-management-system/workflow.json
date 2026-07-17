@@ -1,0 +1,471 @@
+{
+  "name": "AI Proposal Management System",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "documentId": {
+          "__rl": true,
+          "value": "1uhhYz0eDbnzigkevqTHT5mZUOGJya9mHUxaXlH29Ua8",
+          "mode": "list",
+          "cachedResultName": "Client Discovery Form (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uhhYz0eDbnzigkevqTHT5mZUOGJya9mHUxaXlH29Ua8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 410995025,
+          "mode": "list",
+          "cachedResultName": "Form responses 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uhhYz0eDbnzigkevqTHT5mZUOGJya9mHUxaXlH29Ua8/edit#gid=410995025"
+        },
+        "event": "rowAdded",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheetsTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "7673b9c8-efef-4894-9026-1653aaac430d",
+      "name": "Google Sheets Trigger",
+      "credentials": {
+        "googleSheetsTriggerOAuth2Api": {
+          "id": "3IyXs6KYgy29jyNo",
+          "name": "Google Sheets Trigger OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d13c2c68-4c00-45b1-8132-61431016e7e8",
+              "name": "client_name",
+              "value": "={{ $json['Client Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "08580c17-c86b-479c-b943-0a363839fe96",
+              "name": "company",
+              "value": "={{ $json['Company Name'] }}",
+              "type": "string"
+            },
+            {
+              "id": "0f0dfc22-07a0-418b-ad83-5a0cda2b254e",
+              "name": "industry",
+              "value": "={{ $json.Industry }}",
+              "type": "string"
+            },
+            {
+              "id": "045be1df-9089-4d7b-a15a-4e20de41de6c",
+              "name": "current_process",
+              "value": "={{ $json['Current Business Process'] }}",
+              "type": "string"
+            },
+            {
+              "id": "a5a23d17-462f-4583-9e27-93383101ccbb",
+              "name": "pain_points",
+              "value": "={{ $json['Paint Points'] }}",
+              "type": "string"
+            },
+            {
+              "id": "216271a7-fe80-4341-a101-2cf15c090bc9",
+              "name": "desired_outcome",
+              "value": "={{ $json['Desire Outcome'] }}",
+              "type": "string"
+            },
+            {
+              "id": "7cb723be-ad82-457b-a200-24a091085c5a",
+              "name": "current_software",
+              "value": "={{ $json['Current Software'] }}",
+              "type": "string"
+            },
+            {
+              "id": "22d5324d-25f8-489e-9fc0-ab2ddcb35092",
+              "name": "employees",
+              "value": "={{ $json['Estimated Employees'] }}",
+              "type": "number"
+            },
+            {
+              "id": "d43f9413-86db-4c0b-ab06-2d5427b25ba9",
+              "name": "budget",
+              "value": "={{ $json.Budget }}",
+              "type": "string"
+            },
+            {
+              "id": "523dd9c2-a0ad-4526-94a8-193161a2943c",
+              "name": "notes",
+              "value": "={{ $json['Additional Notes'] }}",
+              "type": "string"
+            },
+            {
+              "id": "72ec17ae-d013-4820-9156-b921bb4d0071",
+              "name": "email",
+              "value": "={{ $json['Client Email'] }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "d2d6ee4d-2239-4646-8c42-c59a208e3218",
+      "name": "Prepare Proposal Context"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        208
+      ],
+      "id": "14f78624-4f8f-4f48-b661-a3f10d3808ed",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "x67f9aAPFf2WHX5e",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a professional automation proposal based on the following client information.\n\nClient Name:\n{{ $json.client_name }}\n\nCompany:\n{{ $json.company }}\n\nIndustry:\n{{ $json.industry }}\n\nCurrent Business Process:\n{{ $json.current_process }}\n\nPain Points:\n{{ $json.pain_points }}\n\nDesired Outcome:\n{{ $json.desired_outcome }}\n\nCurrent Software:\n{{ $json.current_software }}\n\nEstimated Employees:\n{{ $json.employees }}\n\nBudget:\n{{ $json.budget }}\n\nAdditional Notes:\n{{ $json.notes }}\n\nYou are a Senior AI Automation Consultant.\n\nYour task is to create a professional, client-ready proposal.\n\nStructure the proposal using these sections:\n\n1. Executive Summary\n2. Current Business Challenges\n3. Proposed AI & Automation Solution\n4. Recommended Workflow\n5. Expected Business Benefits\n6. Estimated ROI\n7. Implementation Timeline\n8. Next Steps\n\nWrite in a professional consulting tone.\n\nDo not mention that the proposal was generated by AI.\n\nMake reasonable business assumptions when needed, but clearly present them as recommendations.\n\nReturn ONLY the structured JSON.\n\nDo not wrap the JSON inside markdown.\n\nDo not include any explanations outside the JSON.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "835cf605-0362-428c-b87f-695868fda950",
+      "name": "AI Proposal Generator"
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"proposal_title\": \"Proposal for JLBA Logistics: Automated Order Processing and Customer Communication\",\n  \"executive_summary\": \"Provide a concise executive summary of the proposal.\",\n  \"current_business_challenges\": \"Describe the client's current business challenges.\",\n  \"proposed_solution\": \"Describe the proposed AI and automation solution.\",\n  \"recommended_workflow\": \"Describe the recommended workflow from start to finish.\",\n  \"expected_business_benefits\": \"List the expected business benefits.\",\n  \"estimated_roi\": \"Estimate the expected ROI based on the provided information.\",\n  \"implementation_timeline\": \"Provide an estimated implementation timeline.\",\n  \"next_steps\": \"Describe the recommended next steps for the client.\",\n  \"estimated_project_cost\": \"$8,500\",\n  \"call_to_action\": \"Invite the client to schedule the next meeting.\"\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        592,
+        208
+      ],
+      "id": "1641f06f-4330-4047-9e64-941db1289565",
+      "name": "Proposal Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1e6fd632-00a2-4170-9c4f-0a0195436b68",
+              "name": "file_name",
+              "value": "={{ $json.output.proposal_title }}.html",
+              "type": "string"
+            },
+            {
+              "id": "e0c2ab5b-b4dd-449f-b67a-4bd99113a637",
+              "name": "proposal_html",
+              "value": "={{\n`<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"UTF-8\">\n<title>${$json.output.proposal_title}</title>\n\n<style>\nbody{\n    font-family:Arial,Helvetica,sans-serif;\n    max-width:900px;\n    margin:40px auto;\n    padding:30px;\n    color:#333;\n    line-height:1.7;\n}\n\nh1{\n    color:#2563EB;\n    border-bottom:3px solid #2563EB;\n    padding-bottom:10px;\n}\n\nh2{\n    color:#1E40AF;\n    margin-top:35px;\n}\n\n.section{\n    margin-bottom:25px;\n}\n\n.footer{\n    margin-top:50px;\n    border-top:1px solid #ddd;\n    padding-top:20px;\n    color:#666;\n    font-size:14px;\n}\n\n.highlight{\n    background:#F3F4F6;\n    padding:15px;\n    border-left:5px solid #2563EB;\n    border-radius:6px;\n}\n</style>\n\n</head>\n\n<body>\n\n<h1>${$json.output.proposal_title}</h1>\n\n<div class=\"section\">\n<h2>Executive Summary</h2>\n<p>${$json.output.executive_summary}</p>\n</div>\n\n<div class=\"section\">\n<h2>Current Business Challenges</h2>\n<p>${$json.output.current_business_challenges}</p>\n</div>\n\n<div class=\"section\">\n<h2>Proposed AI Automation Solution</h2>\n<p>${$json.output.proposed_solution}</p>\n</div>\n\n<div class=\"section\">\n<h2>Recommended Workflow</h2>\n<p>${$json.output.recommended_workflow}</p>\n</div>\n\n<div class=\"section\">\n<h2>Expected Business Benefits</h2>\n<p>${$json.output.expected_business_benefits}</p>\n</div>\n\n<div class=\"section\">\n<h2>Estimated ROI</h2>\n\n<div class=\"highlight\">\n${$json.output.estimated_roi}\n</div>\n\n</div>\n\n<div class=\"section\">\n<h2>Implementation Timeline</h2>\n<p>${$json.output.implementation_timeline}</p>\n</div>\n\n<div class=\"section\">\n<h2>Next Steps</h2>\n<p>${$json.output.next_steps}</p>\n</div>\n\n<div class=\"section\">\n<h2>Estimated Project Cost</h2>\n\n<h3>${$json.output.estimated_project_cost}</h3>\n\n</div>\n\n<div class=\"section\">\n<h2>Call To Action</h2>\n\n<p>${$json.output.call_to_action}</p>\n\n</div>\n\n<div class=\"footer\">\n\nPrepared by\nJohn Lester Armillo\nAI Automation Specialist\n\nWorkflow powered by n8n + Google Gemini AI\n\n</div>\n\n</body>\n\n</html>`\n}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        768,
+        0
+      ],
+      "id": "7e96f609-5cf9-4191-bee1-2887a3309956",
+      "name": "Prepare Proposal File"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "=proposal_html",
+        "options": {
+          "fileName": "={{ $json.file_name }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        0
+      ],
+      "id": "ad718872-9b31-47da-aaf2-cc5ffeb4152b",
+      "name": "Convert Proposal File"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Prepare Proposal Context').item.json.email }}",
+        "subject": "=Proposal for {{ $('Prepare Proposal Context').item.json.company }}",
+        "message": "=Hi {{ $('Prepare Proposal Context').item.json.client_name }},  \n\nThank you for taking the time to discuss your automation goals with us.  \n\nAttached is the proposal prepared based on our discovery session.  Please review it at your convenience.  \n\nIf you have any questions or would like to discuss the next steps, feel free to reply to this email.  \n\nBest regards,  \nAI Automation Team",
+        "options": {
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "78d25317-a155-4d6b-9313-57fadc12852c",
+      "name": "Send Proposal Email",
+      "webhookId": "c9652512-bab7-4372-9673-90dc1e284984",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "8LDnA7JWjcyHhwdR",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1uhhYz0eDbnzigkevqTHT5mZUOGJya9mHUxaXlH29Ua8",
+          "mode": "list",
+          "cachedResultName": "Client Discovery Form (Responses)",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uhhYz0eDbnzigkevqTHT5mZUOGJya9mHUxaXlH29Ua8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 2048030448,
+          "mode": "list",
+          "cachedResultName": "Proposal Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1uhhYz0eDbnzigkevqTHT5mZUOGJya9mHUxaXlH29Ua8/edit#gid=2048030448"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Proposal Date": "={{ $now }}",
+            "Client": "={{ $('Google Sheets Trigger').item.json['Client Name'] }}",
+            "Company": "={{ $('Google Sheets Trigger').item.json['Company Name'] }}",
+            "Industry": "={{ $('Google Sheets Trigger').item.json.Industry }}",
+            "Budget": "={{ $('Google Sheets Trigger').item.json.Budget }}",
+            "Status": "Generated",
+            "Proposal Title": "={{ $('AI Proposal Generator').item.json.output.proposal_title }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Proposal Date",
+              "displayName": "Proposal Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Client",
+              "displayName": "Client",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Budget",
+              "displayName": "Budget",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Proposal Title",
+              "displayName": "Proposal Title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1280,
+        0
+      ],
+      "id": "a23100b4-d8ef-4a50-b236-c608fa36a190",
+      "name": "Log Proposal",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LdXXLdqGPHzuOQEo",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Google Sheets Trigger": {
+      "main": [
+        [
+          {
+            "node": "Prepare Proposal Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Proposal Context": {
+      "main": [
+        [
+          {
+            "node": "AI Proposal Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Proposal Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Proposal Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Proposal Generator",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Proposal Generator": {
+      "main": [
+        [
+          {
+            "node": "Prepare Proposal File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Proposal File": {
+      "main": [
+        [
+          {
+            "node": "Convert Proposal File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert Proposal File": {
+      "main": [
+        [
+          {
+            "node": "Send Proposal Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Proposal Email": {
+      "main": [
+        [
+          {
+            "node": "Log Proposal",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "1d85a71d-9f56-4ec0-979a-a01764b8155b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "dd7b7bbf3f6f14e7610d28f7fa3bda0d8d10de799154be046458e9bce8a3f176"
+  },
+  "nodeGroups": [],
+  "id": "yfkf6o81lmUcPlHY",
+  "tags": []
+}
