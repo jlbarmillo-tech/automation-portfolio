@@ -188,7 +188,9 @@ export default function ResumePage() {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <a
-              href="/resume.pdf"
+              href="/resume/John_Lester_Armillo_AI_Automation_Specialist_Resume.pdf"
+  target="_blank"
+  rel="noopener noreferrer"
               download
               className="inline-flex items-center justify-center gap-2 rounded-full border border-zinc-700 bg-zinc-950/60 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-emerald-500/60 hover:text-emerald-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
             >
@@ -196,7 +198,7 @@ export default function ResumePage() {
               Download Resume
             </a>
             <Link
-              href="/#contact"
+              href="/contact"
               className="group inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 hover:bg-emerald-500 hover:shadow-lg hover:shadow-emerald-500/20 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
             >
               Hire Me

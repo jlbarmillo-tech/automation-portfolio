@@ -20,9 +20,9 @@ const platforms = [
   {
     emoji: '🟠',
     title: 'Zapier',
-    count: 'Coming Soon',
+    count: '4 Projects',
     description:
-      'Business automations and integrations that will be added to the portfolio.',
+      'Business automation, CRM integrations, email workflows, AI-powered automations and productivity solutions built with Zapier.',
     href: '/projects',
   },
 ];
