@@ -187,17 +187,14 @@ export default function ProjectPage({
           >
             <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">Demo</p>
-              <h2 id="demo-video-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Workflow in Action</h2>
+              <h2 id="demo-video-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Live Demonstration</h2>
             </div>
             <div className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 p-2 shadow-2xl shadow-black/25 sm:p-3">
               <video
                 ref={videoRef}
-                autoPlay
-                muted
-                loop
-                playsInline
                 controls
                 preload="metadata"
+                poster={"videoPoster" in project ? project.videoPoster : undefined}
                 className="aspect-video w-full rounded-2xl bg-zinc-950 object-contain"
               >
                 <source src={video} type="video/mp4" />
@@ -216,7 +213,7 @@ export default function ProjectPage({
         >
           <div className="mb-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">Workflow Overview</p>
-            <h2 id="workflow-overview-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Automation Architecture</h2>
+            <h2 id="workflow-overview-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Workflow In Action</h2>
           </div>
           <figure className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 p-2 shadow-2xl shadow-black/25 sm:p-3">
             <button
@@ -239,7 +236,7 @@ export default function ProjectPage({
                 </span>
               </span>
             </button>
-            <figcaption className="px-3 pb-2 pt-4 text-sm font-medium text-zinc-400">Workflow Architecture</figcaption>
+            <figcaption className="px-3 pb-2 pt-4 text-sm font-medium text-zinc-400"></figcaption>
           </figure>
         </motion.section>
 
@@ -254,7 +251,7 @@ export default function ProjectPage({
         >
           <div className="mb-5">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">Execution Validation</p>
-            <h2 id="execution-validation-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Reliable Workflow Delivery</h2>
+            <h2 id="execution-validation-heading" className="mt-2 text-2xl font-semibold text-white sm:text-3xl">Automation Architecture</h2>
           </div>
           <figure className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 p-2 shadow-2xl shadow-black/25 sm:p-3">
             <button
@@ -277,7 +274,7 @@ export default function ProjectPage({
                 </span>
               </span>
             </button>
-            <figcaption className="px-3 pb-2 pt-4 text-sm font-medium text-zinc-400">Successful Workflow Execution</figcaption>
+            <figcaption className="px-3 pb-2 pt-4 text-sm font-medium text-zinc-400"></figcaption>
           </figure>
         </motion.section>
         )}

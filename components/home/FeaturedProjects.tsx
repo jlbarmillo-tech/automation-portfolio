@@ -119,12 +119,12 @@ export default function FeaturedProjects() {
 
               <div className="relative aspect-[16/9] overflow-hidden border-y border-zinc-800 bg-zinc-950">
                 <Image
-                  src={project.workflowImage}
-                  alt={`${project.title} workflow screenshot`}
-                  fill
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
+  src={(project as any).coverImage ?? project.workflowImage}
+  alt={`${project.title} project cover`}
+  fill
+  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+  className="object-cover transition-transform duration-500 group-hover:scale-105"
+/>
               </div>
 
               <div className="flex min-h-64 flex-col p-6">

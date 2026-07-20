@@ -1,26 +1,62 @@
 export const ghlProjects = [
-  {
-    id: 1,
-    title: 'Won Deal Onboarding',
-    slug: 'won-deal-onboarding',
-    category: 'CRM Automation',
-    platform: 'GoHighLevel',
-    description: 'Starts a structured client onboarding journey as soon as an opportunity is marked as won.',
-    technologies: ['GoHighLevel', 'CRM', 'Automation'],
-    featured: true,
-    workflowImage: '/screenshots/ghl/won-deal-onboarding/workflow.png',
-    executionImage: '/screenshots/ghl/won-deal-onboarding/execution-logs.png',
-    challenge: 'The client manually started onboarding after every closed deal, causing delays and inconsistent handoffs.',
-    solution: 'Built a GoHighLevel automation that launches a consistent onboarding process when an opportunity is marked as won.',
-    workflowSummary: [
-      'Trigger when an opportunity is marked as won',
-      'Update the client record and pipeline status',
-      'Create internal onboarding tasks',
-      'Send a welcome email to the new client',
-      'Notify the internal delivery team',
-    ],
-    businessOutcome: ['Reduced manual onboarding work', 'Created a consistent client handoff', 'Improved time to onboarding'],
-  },
+{
+  id: 1,
+  title: 'Healthcare CRM Automation System',
+  slug: 'healthcare-crm-automation-system',
+  category: 'Healthcare Automation',
+  platform: 'GoHighLevel',
+  description:
+    'Production-ready GoHighLevel implementation that automates the complete patient journey from inquiry through treatment completion using CRM workflows, appointment management, reminders, and pipeline automation.',
+
+  technologies: [
+    'GoHighLevel',
+    'CRM',
+    'Workflow Automation',
+    'Appointment Management',
+    'Email Automation',
+    'SMS Automation',
+    'Pipeline Management',
+  ],
+
+  featured: true,
+
+  workflowImage:
+    '/screenshots/ghl/healthcare-crm-automation-system/workflow.png',
+
+  executionImage:
+    '/screenshots/ghl/healthcare-crm-automation-system/architecture.png',
+
+  coverImage:
+  '/screenshots/ghl/healthcare-crm-automation-system/cover.png',
+
+  video:
+  '/screenshots/ghl/healthcare-crm-automation-system/demo.mp4',
+
+  videoPoster:
+  "/screenshots/ghl/healthcare-crm-automation-system/cover.png",
+
+  challenge:
+    'Healthcare clinics often rely on manual CRM updates, inconsistent appointment tracking, and repetitive administrative tasks, increasing the risk of missed follow-ups and operational inefficiencies.',
+
+  solution:
+    'Built a complete GoHighLevel automation system that manages the entire patient lifecycle through CRM workflows, appointment automation, automated reminders, internal notifications, and pipeline progression.',
+
+  workflowSummary: [
+    'Automated patient lead management',
+    'CRM opportunity creation and updates',
+    'Appointment confirmations and reminders',
+    'Consultation and treatment tracking',
+    'No-show and cancellation management',
+    'Case closure automation',
+  ],
+
+  businessOutcome: [
+    'Reduced manual CRM updates',
+    'Standardized patient workflow',
+    'Improved appointment communication',
+    'Better operational visibility',
+  ],
+},
   {
     id: 2,
     title: 'Lead Nurture Drip Campaign',

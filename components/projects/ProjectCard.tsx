@@ -26,13 +26,13 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       </div>
 
       <div className="relative aspect-[16/9] overflow-hidden border-y border-zinc-800 bg-zinc-950">
-        <Image
-          src={project.workflowImage}
-          alt={`${project.title} workflow screenshot`}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-contain p-3 bg-zinc-950 transition-transform duration-500 group-hover:scale-105"
-        />
+      <Image
+  src={(project as any).coverImage ?? project.workflowImage}
+  alt={`${project.title} project cover`}
+  fill
+  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+  className="object-cover transition-transform duration-500 group-hover:scale-105"
+/>
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/0 opacity-0 transition-all duration-300 group-hover:bg-black/60 group-hover:opacity-100">
 
   <div className="rounded-full bg-emerald-500 px-5 py-2 text-sm font-semibold text-white shadow-lg">
