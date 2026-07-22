@@ -58,27 +58,68 @@ export const ghlProjects = [
   ],
 },
   {
-    id: 2,
-    title: 'Lead Nurture Drip Campaign',
-    slug: 'lead-nurture-drip-campaign',
-    category: 'CRM Automation',
-    platform: 'GoHighLevel',
-    description: 'Nurtures new leads with a timed sequence of relevant messages and follow-ups.',
-    technologies: ['GoHighLevel', 'CRM', 'Automation'],
-    featured: true,
-    workflowImage: '/screenshots/ghl/lead-nurture-drip-campaign/workflow.png',
-    executionImage: '/screenshots/ghl/lead-nurture-drip-campaign/execution-logs.png',
-    challenge: 'New leads were not consistently followed up with, resulting in missed opportunities and uneven communication.',
-    solution: 'Built a GoHighLevel drip automation that delivers timely nurture messages based on lead engagement.',
-    workflowSummary: [
-      'Trigger when a new lead enters the CRM',
-      'Send an introductory email',
-      'Wait before the next follow-up',
-      'Send nurture content and a booking prompt',
-      'Evaluate engagement before continuing the sequence',
-    ],
-    businessOutcome: ['Improved follow-up consistency', 'Reduced manual lead chasing', 'Increased booking opportunities'],
-  },
+  id: 2,
+  title: 'Construction CRM & Sales Automation System',
+  slug: 'construction-crm-automation-system',
+  category: 'CRM Automation',
+  platform: 'GoHighLevel',
+  description:
+    'Production-ready GoHighLevel CRM implementation that automates the complete customer journey from Facebook lead capture through project completion using CRM workflows, sales pipeline automation, appointment management, customer follow-ups, review requests, referral campaigns, and lost lead re-engagement.',
+
+  technologies: [
+    'GoHighLevel',
+    'Facebook Lead Ads',
+    'CRM',
+    'Workflow Automation',
+    'Sales Pipeline Management',
+    'Appointment Automation',
+    'Email Automation',
+    'Lead Management',
+  ],
+
+  featured: true,
+
+  workflowImage:
+    '/screenshots/ghl/construction-crm-automation-system/workflow.png',
+
+  executionImage:
+    '/screenshots/ghl/construction-crm-automation-system/architecture.png',
+
+  coverImage:
+    '/screenshots/ghl/construction-crm-automation-system/cover.png',
+
+  video:
+    '/screenshots/ghl/construction-crm-automation-system/demo.mp4',
+
+  videoPoster:
+    '/screenshots/ghl/construction-crm-automation-system/cover.png',
+
+  challenge:
+    'Construction companies often struggle with manual lead tracking, delayed customer follow-ups, inconsistent appointment scheduling, and fragmented sales processes, resulting in slower response times and missed business opportunities.',
+
+  solution:
+    'Built a complete GoHighLevel CRM and sales automation system that captures Facebook leads, automatically creates contacts and opportunities, manages consultations, sends appointment reminders, automates estimate follow-ups, nurtures long-term prospects, requests customer reviews and referrals, and re-engages lost opportunities.',
+
+  workflowSummary: [
+    'Facebook Lead Ads integration',
+    'Automatic contact and opportunity creation',
+    'Sales pipeline automation',
+    'Consultation scheduling and reminders',
+    'Estimate follow-up automation',
+    'Lead nurturing and customer retention',
+    'Review and referral request automation',
+    'Lost lead re-engagement',
+  ],
+
+  businessOutcome: [
+    'Reduced manual lead management',
+    'Faster response to new inquiries',
+    'Standardized sales workflow',
+    'Improved customer engagement',
+    'Increased review and referral opportunities',
+    'Better sales pipeline visibility',
+  ],
+},
   {
     id: 3,
     title: 'AI Lead Capture Workflow',
